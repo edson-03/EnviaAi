@@ -42,3 +42,8 @@ next-env.d.ts
 
 # env de exemplo é versionado
 !.env.example
+
+# docs de trabalho (locais)
+AGENTS.md
+CLAUDE.md
+PLANO.md
