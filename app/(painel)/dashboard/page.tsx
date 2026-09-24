@@ -78,7 +78,9 @@ export default async function DashboardPage() {
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
-                  <p className="text-xs text-zinc-500">/a/{a.slug}</p>
+                  <Link href={`/a/${a.slug}`} target="_blank" className="text-xs text-zinc-500 hover:underline">
+                    /a/{a.slug}
+                  </Link>
                 </div>
                 <a
                   href={`https://drive.google.com/drive/folders/${a.driveFolderId}`}
