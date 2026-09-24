@@ -66,8 +66,15 @@ export function EnvioConvidado({ slug }: { slug: string }) {
       const dados = await res.json();
       if (!res.ok) throw new Error(dados.erro ?? `Erro ${res.status}`);
 
-      await enviarArquivo(file, dados.uploadUrl, (bytes) => atualizar(i, { enviado: bytes }));
+      const driveFile = await enviarArquivo(file, dados.uploadUrl, (bytes) => atualizar(i, { enviado: bytes }));
       atualizar(i, { status: "ok" });
+
+      // O arquivo já está no Drive; falha no registro não é erro para o convidado.
+      fetch("/api/upload-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, fileId: driveFile.id, nomeConvidado: nomeConvidado.trim() || undefined }),
+      }).catch(() => {});
     } catch (e) {
       atualizar(i, { status: "erro", erro: (e as Error).message });
     }
