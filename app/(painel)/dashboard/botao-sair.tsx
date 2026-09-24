@@ -12,7 +12,7 @@ export function BotaoSair() {
   }
 
   return (
-    <button onClick={sair} className="rounded-lg border px-4 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-900">
+    <button onClick={sair} className="btn-secundario">
       Sair
     </button>
   );

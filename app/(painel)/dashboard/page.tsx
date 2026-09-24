@@ -5,10 +5,9 @@ import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { auth } from "@/lib/auth";
 import { statusDrive } from "@/lib/google";
-import { albums } from "@/lib/mongodb";
+import { albums, uploads } from "@/lib/mongodb";
 import { BotaoCopiar } from "./a/[slug]/botao-copiar";
 import { BotaoReconectar } from "./botao-reconectar";
-import { BotaoSair } from "./botao-sair";
 
 function formatarGB(bytes: number) {
   return `${(bytes / 1024 ** 3).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} GB`;
@@ -26,93 +25,116 @@ export default async function DashboardPage() {
       .toArray(),
   ]);
 
-  const qrPngs = await Promise.all(
-    lista.map((a) => QRCode.toDataURL(`${process.env.NEXT_PUBLIC_APP_URL}/a/${a.slug}`, { width: 1024, margin: 2 })),
-  );
+  const [qrPngs, contagens] = await Promise.all([
+    Promise.all(
+      lista.map((a) => QRCode.toDataURL(`${process.env.NEXT_PUBLIC_APP_URL}/a/${a.slug}`, { width: 1024, margin: 2 })),
+    ),
+    uploads
+      .aggregate<{ _id: ObjectId; total: number }>([
+        { $match: { albumId: { $in: lista.map((a) => a._id) } } },
+        { $group: { _id: "$albumId", total: { $sum: 1 } } },
+      ])
+      .toArray(),
+  ]);
+  const totalPorAlbum = new Map(contagens.map((c) => [c._id.toString(), c.total]));
 
   return (
-    <main className="mx-auto w-full max-w-3xl p-4">
-      <header className="flex items-center justify-between gap-4">
+    <main className="mx-auto w-full max-w-4xl px-4 py-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Olá, {session.user.name}</h1>
-          <p className="text-sm text-zinc-500">{session.user.email}</p>
+          <p className="text-sm text-zinc-500">Olá, {session.user.name.split(" ")[0]}</p>
+          <h1 className="text-3xl font-bold tracking-tight">Seus álbuns</h1>
         </div>
-        <BotaoSair />
-      </header>
-
-      <section className="mt-6 flex items-center justify-between gap-4 rounded-lg border p-4">
-        {drive.conectado ? (
-          <p className="text-sm">
-            <span className="mr-2 inline-block h-2 w-2 rounded-full bg-green-500" />
-            Google Drive conectado
-            {drive.livreBytes !== null && <> · {formatarGB(drive.livreBytes)} livres</>}
-          </p>
-        ) : (
-          <>
-            <p className="text-sm">
-              <span className="mr-2 inline-block h-2 w-2 rounded-full bg-amber-500" />
-              Perdemos o acesso ao seu Google Drive. Reconecte para receber as fotos.
-            </p>
-            <BotaoReconectar />
-          </>
+        {drive.conectado && (
+          <Link href="/dashboard/novo" className="btn-primario">
+            + Novo álbum
+          </Link>
         )}
-      </section>
+      </div>
 
-      <section className="mt-8">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold">Seus álbuns</h2>
+      {drive.conectado ? (
+        <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+          <span className="h-2 w-2 rounded-full bg-green-500" />
+          Google Drive conectado
+          {drive.livreBytes !== null && <> · {formatarGB(drive.livreBytes)} livres</>}
+        </p>
+      ) : (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <p>Perdemos o acesso ao seu Google Drive. Reconecte para voltar a receber as fotos.</p>
+          <BotaoReconectar />
+        </div>
+      )}
+
+      {lista.length === 0 ? (
+        <div className="cartao mt-8 flex flex-col items-center gap-3 px-6 py-14 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-950">
+            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+              <path d="M4 8a2 2 0 0 1 2-2h1.5l1.5-2h6l1.5 2H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" strokeLinejoin="round" />
+              <circle cx="12" cy="12.5" r="3.5" />
+            </svg>
+          </span>
+          <h2 className="text-lg font-semibold">Crie seu primeiro álbum</h2>
+          <p className="max-w-sm text-sm text-zinc-500">
+            Em menos de um minuto você tem um link e um QR code para os convidados enviarem as fotos.
+          </p>
           {drive.conectado && (
-            <Link
-              href="/dashboard/novo"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-            >
-              Novo álbum
+            <Link href="/dashboard/novo" className="btn-primario mt-2">
+              Criar álbum
             </Link>
           )}
         </div>
-
-        {lista.length === 0 ? (
-          <p className="mt-4 text-sm text-zinc-500">Nenhum álbum ainda.</p>
-        ) : (
-          <ul className="mt-4 divide-y rounded-lg border">
-            {lista.map((a, i) => (
-              <li key={a.slug} className="flex flex-wrap items-center justify-between gap-2 p-4">
-                <div>
-                  <Link href={`/dashboard/a/${a.slug}`} className="font-medium hover:underline">
-                    {a.titulo}
-                  </Link>
-                  <p className="text-sm text-zinc-500">
-                    {[a.tipoEvento, a.dataEvento?.toLocaleDateString("pt-BR", { timeZone: "UTC" })]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                  <Link href={`/a/${a.slug}`} target="_blank" className="text-xs text-zinc-500 hover:underline">
-                    /a/{a.slug}
-                  </Link>
+      ) : (
+        <ul className="mt-8 grid gap-4 md:grid-cols-2">
+          {lista.map((a, i) => {
+            const total = totalPorAlbum.get(a._id.toString()) ?? 0;
+            return (
+              <li key={a.slug} className="cartao flex flex-col p-5 transition hover:border-violet-300 dark:hover:border-violet-800">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <Link href={`/dashboard/a/${a.slug}`} className="block truncate text-lg font-semibold hover:text-violet-600">
+                      {a.titulo}
+                    </Link>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {[a.tipoEvento, a.dataEvento?.toLocaleDateString("pt-BR", { timeZone: "UTC" })]
+                        .filter(Boolean)
+                        .join(" · ") || "Sem data"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-violet-600/10 px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300">
+                    {total} {total === 1 ? "arquivo" : "arquivos"}
+                  </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+
+                <Link
+                  href={`/a/${a.slug}`}
+                  target="_blank"
+                  className="mt-3 truncate text-xs text-zinc-400 hover:text-violet-600"
+                >
+                  /a/{a.slug} ↗
+                </Link>
+
+                <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                  <Link href={`/dashboard/a/${a.slug}`} className="btn-primario">
+                    Ver envios
+                  </Link>
                   <BotaoCopiar texto={`${process.env.NEXT_PUBLIC_APP_URL}/a/${a.slug}`} />
-                  <a
-                    href={qrPngs[i]}
-                    download={`qrcode-${a.slug}.png`}
-                    className="rounded-lg border px-3 py-2 text-sm hover:bg-zinc-100"
-                  >
-                    Baixar QR code
+                  <a href={qrPngs[i]} download={`qrcode-${a.slug}.png`} className="btn-secundario">
+                    QR code
                   </a>
                   <a
                     href={`https://drive.google.com/drive/folders/${a.driveFolderId}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sm text-blue-600 hover:underline"
+                    className="ml-auto text-sm font-medium text-zinc-500 hover:text-violet-600"
                   >
-                    Abrir no Drive
+                    Drive ↗
                   </a>
                 </div>
               </li>
-            ))}
-          </ul>
-        )}
-      </section>
+            );
+          })}
+        </ul>
+      )}
     </main>
   );
 }

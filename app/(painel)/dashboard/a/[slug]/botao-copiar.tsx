@@ -12,8 +12,8 @@ export function BotaoCopiar({ texto }: { texto: string }) {
   }
 
   return (
-    <button onClick={copiar} className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700">
-      {copiado ? "Copiado!" : "Copiar link"}
+    <button onClick={copiar} className="btn-secundario">
+      {copiado ? "✓ Copiado!" : "Copiar link"}
     </button>
   );
 }

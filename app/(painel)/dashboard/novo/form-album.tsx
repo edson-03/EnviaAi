@@ -8,40 +8,37 @@ export function FormAlbum() {
   const [estado, acao, enviando] = useActionState(criarAlbum, {});
 
   return (
-    <form action={acao} className="mt-6 flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm font-medium">
+    <form action={acao} className="mt-6 flex flex-col gap-5">
+      <label className="rotulo">
         Nome do evento
-        <input
-          name="titulo"
-          required
-          maxLength={120}
-          placeholder="Casamento Ana e Léo"
-          className="rounded-lg border px-3 py-2 font-normal"
-        />
+        <input name="titulo" required maxLength={120} placeholder="Casamento Ana e Léo" className="campo" />
       </label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        Tipo de evento (opcional)
-        <select name="tipoEvento" defaultValue="" className="rounded-lg border px-3 py-2 font-normal">
-          <option value="">Selecione</option>
-          {TIPOS_EVENTO.map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
-      </label>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <label className="rotulo">
+          Tipo de evento (opcional)
+          <select name="tipoEvento" defaultValue="" className="campo">
+            <option value="">Selecione</option>
+            {TIPOS_EVENTO.map((t) => (
+              <option key={t}>{t}</option>
+            ))}
+          </select>
+        </label>
 
-      <label className="flex flex-col gap-1 text-sm font-medium">
-        Data do evento (opcional)
-        <input type="date" name="dataEvento" className="rounded-lg border px-3 py-2 font-normal" />
-      </label>
+        <label className="rotulo">
+          Data do evento (opcional)
+          <input type="date" name="dataEvento" className="campo" />
+        </label>
+      </div>
 
-      {estado.erro && <p className="text-sm text-red-600">{estado.erro}</p>}
+      {estado.erro && (
+        <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+          {estado.erro}
+        </p>
+      )}
 
-      <button
-        disabled={enviando}
-        className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60"
-      >
-        {enviando ? "Criando..." : "Criar álbum"}
+      <button disabled={enviando} className="btn-primario py-3 text-base">
+        {enviando ? "Criando álbum..." : "Criar álbum"}
       </button>
     </form>
   );

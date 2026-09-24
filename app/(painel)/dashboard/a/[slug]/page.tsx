@@ -41,40 +41,69 @@ export default async function AlbumPainelPage({ params }: { params: Promise<{ sl
   ]);
 
   return (
-    <main className="mx-auto w-full max-w-3xl p-4">
-      <Link href="/dashboard" className="text-sm text-zinc-500 hover:underline">
-        ← Voltar
+    <main className="mx-auto w-full max-w-4xl px-4 py-8">
+      <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-violet-600">
+        ← Seus álbuns
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">{album.titulo}</h1>
-      <p className="text-sm text-zinc-500">
-        {total} {total === 1 ? "arquivo recebido" : "arquivos recebidos"}
-        {drive.conectado && drive.livreBytes !== null && <> · {formatarBytes(drive.livreBytes)} livres no Drive</>}
-        {!drive.conectado && <> · Drive desconectado, reconecte no painel</>}
-      </p>
+      <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          {album.tipoEvento && <p className="text-sm font-medium text-violet-600">{album.tipoEvento}</p>}
+          <h1 className="text-3xl font-bold tracking-tight">{album.titulo}</h1>
+        </div>
+        <a
+          href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-secundario"
+        >
+          Abrir pasta no Drive ↗
+        </a>
+      </div>
 
-      <section className="mt-6 flex flex-col items-center gap-4 rounded-lg border p-4 sm:flex-row sm:items-start">
-        <div className="w-48 shrink-0 bg-white" dangerouslySetInnerHTML={{ __html: qrSvg }} />
-        <div className="flex min-w-0 flex-col gap-3">
-          <p className="break-all text-sm">{link}</p>
-          <div className="flex flex-wrap gap-2">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="cartao p-5">
+          <p className="text-sm text-zinc-500">Arquivos recebidos</p>
+          <p className="mt-1 text-3xl font-bold">{total.toLocaleString("pt-BR")}</p>
+        </div>
+        <div className="cartao p-5">
+          <p className="text-sm text-zinc-500">Espaço livre no Drive</p>
+          <p className="mt-1 text-3xl font-bold">
+            {!drive.conectado ? (
+              <span className="text-base font-medium text-amber-600">Drive desconectado, reconecte no painel</span>
+            ) : drive.livreBytes === null ? (
+              "Ilimitado"
+            ) : (
+              formatarBytes(drive.livreBytes)
+            )}
+          </p>
+        </div>
+      </div>
+
+      <section className="cartao mt-4 flex flex-col items-center gap-6 p-5 sm:flex-row">
+        {/* eslint-disable-next-line @next/next/no-img-element -- data URL gerada no servidor */}
+        <img src={qrPng} alt={`QR code do álbum ${album.titulo}`} className="h-44 w-44 shrink-0 rounded-lg border border-zinc-200 bg-white p-1" />
+        <div className="flex min-w-0 flex-col gap-3 text-center sm:text-left">
+          <div>
+            <h2 className="font-semibold">Link para os convidados</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Imprima o QR code nas mesas ou envie o link. Quem abrir já pode enviar fotos.
+            </p>
+          </div>
+          <p className="break-all rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs dark:bg-zinc-800">{link}</p>
+          <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
             <BotaoCopiar texto={link} />
-            <a href={qrPng} download={`qrcode-${slug}.png`} className="rounded-lg border px-3 py-2 text-sm hover:bg-zinc-100">
+            <a href={qrPng} download={`qrcode-${slug}.png`} className="btn-secundario">
               Baixar PNG
             </a>
             <a
               href={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`}
               download={`qrcode-${slug}.svg`}
-              className="rounded-lg border px-3 py-2 text-sm hover:bg-zinc-100"
+              className="btn-secundario"
             >
               Baixar SVG
             </a>
-            <a
-              href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-lg border px-3 py-2 text-sm hover:bg-zinc-100"
-            >
-              Abrir no Drive
+            <a href={link} target="_blank" rel="noreferrer" className="btn-secundario">
+              Abrir página ↗
             </a>
           </div>
         </div>
@@ -83,30 +112,39 @@ export default async function AlbumPainelPage({ params }: { params: Promise<{ sl
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Envios</h2>
         {lista.length === 0 ? (
-          <p className="mt-4 text-sm text-zinc-500">Nenhum arquivo recebido ainda.</p>
+          <div className="cartao mt-4 px-6 py-10 text-center text-sm text-zinc-500">
+            Nenhum arquivo recebido ainda. Compartilhe o link ou o QR code com os convidados.
+          </div>
         ) : (
-          <ul className="mt-4 divide-y rounded-lg border">
+          <ul className="cartao mt-4 divide-y divide-zinc-100 dark:divide-zinc-800">
             {lista.map((u) => (
-              <li key={u.driveFileId} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
-                <div className="min-w-0">
+              <li key={u.driveFileId} className="flex items-center gap-3 px-4 py-3 text-sm">
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${
+                    u.mimeType.startsWith("video/")
+                      ? "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+                      : "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+                  }`}
+                >
+                  {u.mimeType.startsWith("video/") ? "VÍDEO" : "FOTO"}
+                </span>
+                <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{u.nomeArquivo}</p>
-                  <p className="text-zinc-500">
+                  <p className="truncate text-xs text-zinc-500">
                     {[
-                      u.nomeConvidado,
+                      u.nomeConvidado ?? "Anônimo",
                       formatarBytes(u.tamanhoBytes),
                       u.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
+                    ].join(" · ")}
                   </p>
                 </div>
                 <a
                   href={`https://drive.google.com/file/d/${u.driveFileId}/view`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-blue-600 hover:underline"
+                  className="shrink-0 text-sm font-medium text-violet-600 hover:text-violet-700"
                 >
-                  Ver
+                  Ver ↗
                 </a>
               </li>
             ))}

@@ -9,13 +9,17 @@ export default async function NovoAlbumPage() {
   if (!session) redirect("/entrar");
 
   return (
-    <main className="mx-auto w-full max-w-md p-4">
-      <Link href="/dashboard" className="text-sm text-zinc-500 hover:underline">
-        ← Voltar
+    <main className="mx-auto w-full max-w-lg px-4 py-8">
+      <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-violet-600">
+        ← Seus álbuns
       </Link>
-      <h1 className="mt-2 text-2xl font-bold">Novo álbum</h1>
-      <p className="text-sm text-zinc-500">Vamos criar uma pasta no seu Google Drive para receber as fotos.</p>
-      <FormAlbum />
+      <div className="cartao mt-4 p-6">
+        <h1 className="text-2xl font-bold tracking-tight">Novo álbum</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Vamos criar uma pasta no seu Google Drive para receber as fotos e vídeos.
+        </p>
+        <FormAlbum />
+      </div>
     </main>
   );
 }

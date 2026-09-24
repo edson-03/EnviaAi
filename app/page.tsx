@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 const PASSOS = [
   {
@@ -99,9 +100,7 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col font-sans">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
-        <span className="text-xl font-bold tracking-tight">
-          Envia<span className="text-violet-600">í</span>
-        </span>
+        <Logo />
         <Link href="/entrar" className="text-sm font-medium text-zinc-700 hover:text-violet-600 dark:text-zinc-300">
           Entrar
         </Link>
