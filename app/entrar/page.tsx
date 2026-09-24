@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
@@ -34,6 +35,17 @@ export default async function EntrarPage() {
         ) : (
           <BotaoGoogle />
         )}
+        <p className="text-xs text-zinc-500">
+          Ao entrar, você concorda com os{" "}
+          <Link href="/termos" className="underline hover:text-violet-600">
+            Termos de uso
+          </Link>{" "}
+          e a{" "}
+          <Link href="/privacidade" className="underline hover:text-violet-600">
+            Política de Privacidade
+          </Link>
+          .
+        </p>
       </div>
     </main>
   );

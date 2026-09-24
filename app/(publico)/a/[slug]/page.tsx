@@ -40,6 +40,14 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
             <Link href="/" className="font-semibold text-zinc-700 hover:text-violet-600 dark:text-zinc-300">
               Envia<span className="text-violet-600">í</span>
             </Link>
+            {" · "}
+            <Link href="/privacidade" className="hover:text-violet-600">
+              Privacidade
+            </Link>
+            {" · "}
+            <Link href="/termos" className="hover:text-violet-600">
+              Termos
+            </Link>
           </p>
         </footer>
       </main>

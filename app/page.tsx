@@ -204,7 +204,14 @@ export default function Home() {
       </main>
 
       <footer className="border-t py-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
-        © {new Date().getFullYear()} Enviaí
+        © {new Date().getFullYear()} Enviaí ·{" "}
+        <Link href="/privacidade" className="hover:text-violet-600">
+          Privacidade
+        </Link>{" "}
+        ·{" "}
+        <Link href="/termos" className="hover:text-violet-600">
+          Termos de uso
+        </Link>
       </footer>
     </div>
   );
