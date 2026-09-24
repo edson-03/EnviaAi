@@ -36,6 +36,20 @@ async function acessoNegado(res: Response) {
   return /insufficient/i.test(await res.clone().text());
 }
 
+// Cria uma pasta na raiz do Drive do usuário e devolve o id.
+export async function criarPasta(userId: string, nome: string) {
+  const token = await obterAccessToken(userId);
+  const res = await fetch(`${DRIVE_API}/files?fields=id`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name: nome, mimeType: "application/vnd.google-apps.folder" }),
+  });
+  if (await acessoNegado(res)) throw new DriveDesconectado();
+  if (!res.ok) throw new Error(`Drive files.create falhou: ${res.status}`);
+  const { id } = await res.json();
+  return id as string;
+}
+
 export type StatusDrive = { conectado: true; livreBytes: number | null } | { conectado: false };
 
 export async function statusDrive(userId: string): Promise<StatusDrive> {

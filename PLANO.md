@@ -92,10 +92,12 @@ Antes de fechar: verificar domínio `.com.br` no Registro.br, perfil no Instagra
 - **Pronto quando:** access token renovado com sucesso; acesso revogado no Google leva ao estado "Reconectar".
 - Concluído em 2026-09-24: `lib/google.ts` (`obterAccessToken`, `statusDrive` com espaço livre), botão "Reconectar Drive" via `linkSocial`. Testado: renovação após expirar, revogação -> Reconectar -> conectado.
 
-### Etapa 5 — Criar álbum `[ ]`
+### Etapa 5 — Criar álbum `[~]`
 - Formulário: título, tipo de evento, data. Slug único gerado a partir do título.
 - Cria pasta no Drive e salva `drive_folder_id`.
 - **Pronto quando:** pasta aparece no Drive e o álbum aparece no painel.
+- Feito: `/dashboard/novo` (server action `criarAlbum`), `criarPasta` em `lib/google.ts`, lista de álbuns no `/dashboard`. Slug = título sem acento + sufixo aleatório de 5 caracteres (não adivinhável); pasta `Enviaí - <título>` na raiz do Drive. Lint e build ok.
+- Falta: teste real (criar álbum logado e conferir pasta no Drive).
 
 ### Etapa 6 — Página do convidado `/a/[slug]` `[ ]`
 - Nome opcional, seleção múltipla (`accept="image/*,video/*"`), fila com 2–3 envios paralelos, progresso por arquivo, retomada, mensagem de sucesso.
