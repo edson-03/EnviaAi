@@ -1,10 +1,21 @@
 // Pública: cria sessão resumable no Drive do dono do álbum, já dentro da pasta do álbum.
 // O navegador do convidado envia o arquivo direto ao Drive com a URL devolvida.
-import { albums } from "@/lib/mongodb";
+import { albums, uploads } from "@/lib/mongodb";
 import { DriveDesconectado, obterAccessToken } from "@/lib/google";
-import { MAX_FILE_BYTES, tipoPermitido } from "@/lib/upload-limits";
+import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
+import {
+  JANELA_LIMITE_MS,
+  LIMITE_REQUISICOES_IP,
+  MAX_ARQUIVOS_POR_ALBUM,
+  MAX_FILE_BYTES,
+  tipoPermitido,
+} from "@/lib/upload-limits";
 
 export async function POST(req: Request) {
+  if (await excedeuLimite(`upload-session:${ipDaRequisicao(req)}`, LIMITE_REQUISICOES_IP, JANELA_LIMITE_MS)) {
+    return Response.json({ erro: "Muitos envios seguidos, aguarde alguns minutos" }, { status: 429 });
+  }
+
   const { slug, fileName, mimeType, size, nomeConvidado } = await req.json();
 
   if (
@@ -25,6 +36,9 @@ export async function POST(req: Request) {
 
   const album = await albums.findOne({ slug, ativo: true }, { projection: { ownerId: 1, driveFolderId: 1 } });
   if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
+  if ((await uploads.countDocuments({ albumId: album._id })) >= MAX_ARQUIVOS_POR_ALBUM) {
+    return Response.json({ erro: "Este álbum atingiu o limite de arquivos" }, { status: 403 });
+  }
 
   let token: string;
   try {

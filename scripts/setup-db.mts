@@ -48,6 +48,18 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
       [{ albumId: 1, createdAt: -1 }],
     ],
   },
+  rateLimits: {
+    schema: {
+      bsonType: "object",
+      required: ["_id", "count", "expiresAt"],
+      properties: {
+        _id: { bsonType: "string" },
+        count: { bsonType: ["int", "long", "double"], minimum: 0 },
+        expiresAt: { bsonType: "date" },
+      },
+    },
+    indices: [[{ expiresAt: 1 }, { expireAfterSeconds: 0 }]],
+  },
 };
 
 async function setupDb(db: Db) {

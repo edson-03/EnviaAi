@@ -3,9 +3,14 @@
 import { MongoServerError, ObjectId } from "mongodb";
 import { albums, uploads } from "@/lib/mongodb";
 import { DRIVE_API, DriveDesconectado, obterAccessToken } from "@/lib/google";
-import { tipoPermitido } from "@/lib/upload-limits";
+import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
+import { JANELA_LIMITE_MS, LIMITE_REQUISICOES_IP, tipoPermitido } from "@/lib/upload-limits";
 
 export async function POST(req: Request) {
+  if (await excedeuLimite(`upload-complete:${ipDaRequisicao(req)}`, LIMITE_REQUISICOES_IP, JANELA_LIMITE_MS)) {
+    return Response.json({ erro: "Muitas requisições, aguarde alguns minutos" }, { status: 429 });
+  }
+
   const { slug, fileId, nomeConvidado } = await req.json();
 
   if (

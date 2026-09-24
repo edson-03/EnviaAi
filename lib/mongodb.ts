@@ -41,5 +41,13 @@ export type Upload = {
   createdAt: Date;
 };
 
+// Contador de requisições por chave (ex.: "upload-session:<ip>:<janela>"). Apagado pelo índice TTL.
+export type RateLimit = {
+  _id: string;
+  count: number;
+  expiresAt: Date;
+};
+
 export const albums: Collection<Album> = db.collection<Album>("albums");
 export const uploads: Collection<Upload> = db.collection<Upload>("uploads");
+export const rateLimits: Collection<RateLimit> = db.collection<RateLimit>("rateLimits");
