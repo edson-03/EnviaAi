@@ -72,7 +72,9 @@ export default async function DashboardPage() {
             {lista.map((a) => (
               <li key={a.slug} className="flex flex-wrap items-center justify-between gap-2 p-4">
                 <div>
-                  <p className="font-medium">{a.titulo}</p>
+                  <Link href={`/dashboard/a/${a.slug}`} className="font-medium hover:underline">
+                    {a.titulo}
+                  </Link>
                   <p className="text-sm text-zinc-500">
                     {[a.tipoEvento, a.dataEvento?.toLocaleDateString("pt-BR", { timeZone: "UTC" })]
                       .filter(Boolean)
