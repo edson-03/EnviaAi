@@ -62,5 +62,11 @@ export async function enviarResumoSePreciso(albumId: ObjectId, { ignorarInterval
   <p style="font-size:12px;color:#a1a1aa;margin-top:32px">Você recebe no máximo um resumo por hora de cada álbum. Para parar, desligue em “Sua conta” no painel do Enviaí.</p>
 </div>`;
 
-  await enviarEmail(dono.email, assunto, html);
+  // Falhou (sem chave, domínio não verificado...): desfaz a reserva para o próximo resumo incluir estes arquivos.
+  if (!(await enviarEmail(dono.email, assunto, html))) {
+    await albums.updateOne(
+      { _id: albumId, ultimoResumoEm: agora },
+      album.ultimoResumoEm ? { $set: { ultimoResumoEm: album.ultimoResumoEm } } : { $unset: { ultimoResumoEm: 1 } },
+    );
+  }
 }
