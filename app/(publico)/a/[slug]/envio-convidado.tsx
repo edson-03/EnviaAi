@@ -15,8 +15,11 @@ type Item = {
 
 export function EnvioConvidado({ slug }: { slug: string }) {
   const [nomeConvidado, setNomeConvidado] = useState("");
+  const [recado, setRecado] = useState("");
+  const [recadoEnviado, setRecadoEnviado] = useState(false);
   const [itens, setItens] = useState<Item[]>([]);
   const arquivos = useRef<File[]>([]);
+  const recadoPorArquivo = useRef(new Map<number, string>()); // recado vai só no 1º arquivo da seleção
   const fila = useRef<number[]>([]);
   const ativos = useRef(0);
 
@@ -50,6 +53,7 @@ export function EnvioConvidado({ slug }: { slug: string }) {
 
   async function enviar(i: number) {
     const file = arquivos.current[i];
+    const recadoArquivo = recadoPorArquivo.current.get(i);
     atualizar(i, { status: "enviando", enviado: 0, erro: undefined });
     try {
       const res = await fetch("/api/upload-session", {
@@ -61,6 +65,7 @@ export function EnvioConvidado({ slug }: { slug: string }) {
           mimeType: file.type,
           size: file.size,
           nomeConvidado: nomeConvidado.trim() || undefined,
+          recado: recadoArquivo,
         }),
       });
       const dados = await res.json();
@@ -73,7 +78,12 @@ export function EnvioConvidado({ slug }: { slug: string }) {
       fetch("/api/upload-complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, fileId: driveFile.id, nomeConvidado: nomeConvidado.trim() || undefined }),
+        body: JSON.stringify({
+          slug,
+          fileId: driveFile.id,
+          nomeConvidado: nomeConvidado.trim() || undefined,
+          recado: recadoArquivo,
+        }),
       }).catch(() => {});
     } catch (e) {
       atualizar(i, { status: "erro", erro: (e as Error).message });
@@ -96,6 +106,11 @@ export function EnvioConvidado({ slug }: { slug: string }) {
     e.target.value = "";
     const base = arquivos.current.length;
     arquivos.current.push(...novos);
+    if (novos.length && recado.trim()) {
+      recadoPorArquivo.current.set(base, recado.trim());
+      setRecado("");
+      setRecadoEnviado(true);
+    }
     setItens((atual) => [
       ...atual,
       ...novos.map((f) => ({ nome: f.name, total: f.size, enviado: 0, status: "aguardando" as const })),
@@ -126,6 +141,24 @@ export function EnvioConvidado({ slug }: { slug: string }) {
             placeholder="Assim sabem quem enviou"
             className="campo"
           />
+        </label>
+
+        <label className="rotulo">
+          Deixe um recado (opcional)
+          <textarea
+            value={recado}
+            onChange={(e) => {
+              setRecado(e.target.value);
+              setRecadoEnviado(false);
+            }}
+            maxLength={500}
+            rows={2}
+            placeholder="Uma mensagem para quem organizou o evento"
+            className="campo resize-y"
+          />
+          <span className="text-xs font-normal text-zinc-500">
+            {recadoEnviado ? "✓ Recado adicionado às fotos escolhidas." : "Vai junto com as próximas fotos que você escolher."}
+          </span>
         </label>
 
         <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 px-4 py-8 text-center transition hover:border-violet-500 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/30 dark:hover:border-violet-600">

@@ -16,14 +16,15 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Muitos envios seguidos, aguarde alguns minutos" }, { status: 429 });
   }
 
-  const { slug, fileName, mimeType, size, nomeConvidado } = await req.json();
+  const { slug, fileName, mimeType, size, nomeConvidado, recado } = await req.json();
 
   if (
     typeof slug !== "string" ||
     typeof fileName !== "string" ||
     typeof mimeType !== "string" ||
     !Number.isSafeInteger(size) ||
-    (nomeConvidado !== undefined && (typeof nomeConvidado !== "string" || nomeConvidado.length > 80))
+    (nomeConvidado !== undefined && (typeof nomeConvidado !== "string" || nomeConvidado.length > 80)) ||
+    (recado !== undefined && (typeof recado !== "string" || recado.length > 500))
   ) {
     return Response.json({ erro: "Dados inválidos" }, { status: 400 });
   }
@@ -68,7 +69,11 @@ export async function POST(req: Request) {
     body: JSON.stringify({
       name: fileName.slice(0, 200),
       parents: [album.driveFolderId],
-      ...(nomeConvidado && { description: `Enviado por ${nomeConvidado}` }),
+      ...((nomeConvidado || recado) && {
+        description: [nomeConvidado && `Enviado por ${nomeConvidado}`, recado && `Recado: ${recado}`]
+          .filter(Boolean)
+          .join("\n"),
+      }),
     }),
   });
 

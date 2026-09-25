@@ -11,13 +11,14 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Muitas requisições, aguarde alguns minutos" }, { status: 429 });
   }
 
-  const { slug, fileId, nomeConvidado } = await req.json();
+  const { slug, fileId, nomeConvidado, recado } = await req.json();
 
   if (
     typeof slug !== "string" ||
     typeof fileId !== "string" ||
     !/^[\w-]{10,100}$/.test(fileId) ||
-    (nomeConvidado !== undefined && (typeof nomeConvidado !== "string" || nomeConvidado.length > 80))
+    (nomeConvidado !== undefined && (typeof nomeConvidado !== "string" || nomeConvidado.length > 80)) ||
+    (recado !== undefined && (typeof recado !== "string" || recado.length > 500))
   ) {
     return Response.json({ erro: "Dados inválidos" }, { status: 400 });
   }
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
       mimeType: file.mimeType,
       tamanhoBytes: Number(file.size ?? 0),
       ...(nomeConvidado?.trim() && { nomeConvidado: nomeConvidado.trim() }),
+      ...(recado?.trim() && { legenda: recado.trim() }),
       aprovado: true,
       createdAt: new Date(),
     });
