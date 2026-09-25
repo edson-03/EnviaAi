@@ -20,6 +20,7 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
         mensagemBoasVindas: { bsonType: "string", maxLength: 500 },
         galeriaPublica: { bsonType: "bool" },
         ativo: { bsonType: "bool" },
+        suspenso: { bsonType: "bool" },
         createdAt: { bsonType: "date" },
       },
     },

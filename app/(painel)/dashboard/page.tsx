@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     albums
       .find(
         { ownerId: new ObjectId(session.user.id) },
-        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1 } },
+        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1, suspenso: 1 } },
       )
       .sort({ createdAt: -1 })
       .toArray(),
@@ -147,12 +147,14 @@ export default async function DashboardPage() {
               >
                 <Link href={`/dashboard/a/${a.slug}`} className={`relative block h-28 bg-gradient-to-br ${capaDoAlbum(a.slug)}`}>
                   <span
-                    className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium backdrop-blur ${
-                      a.ativo ? "bg-white/85 text-green-700" : "bg-white/85 text-amber-700"
+                    className={`absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/85 px-2.5 py-1 text-xs font-medium backdrop-blur ${
+                      a.suspenso ? "text-red-700" : a.ativo ? "text-green-700" : "text-amber-700"
                     }`}
                   >
-                    <span className={`h-1.5 w-1.5 rounded-full ${a.ativo ? "bg-green-500" : "bg-amber-500"}`} />
-                    {a.ativo ? "Recebendo" : "Pausado"}
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${a.suspenso ? "bg-red-500" : a.ativo ? "bg-green-500" : "bg-amber-500"}`}
+                    />
+                    {a.suspenso ? "Suspenso" : a.ativo ? "Recebendo" : "Pausado"}
                   </span>
                   {a.dataEvento && (
                     <span className="absolute right-3 top-3 flex w-12 flex-col items-center overflow-hidden rounded-lg bg-white text-center shadow">

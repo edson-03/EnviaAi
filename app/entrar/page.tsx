@@ -9,11 +9,18 @@ import { BotaoGoogle } from "./botao-google";
 // são bloqueados pelo Google no login.
 const WEBVIEW = /Instagram|FBAN|FBAV|FB_IAB|WhatsApp|TikTok|musical_ly|LinkedInApp|Line\/|; wv\)/i;
 
-export default async function EntrarPage() {
+export default async function EntrarPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const h = await headers();
   if (await auth.api.getSession({ headers: h })) redirect("/dashboard");
 
   const emWebview = WEBVIEW.test(h.get("user-agent") ?? "");
+  // Better Auth devolve erros de login como /entrar?error=CODIGO (ver onAPIError em lib/auth.ts).
+  const { error } = await searchParams;
+  const erroLogin = !error
+    ? undefined
+    : /suspens/i.test(error)
+      ? "Sua conta está suspensa. Fale com o suporte pelo e-mail edsonsilvat03@gmail.com."
+      : "Não foi possível entrar. Tente de novo.";
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center bg-gradient-to-b from-violet-100 to-white px-4 py-12 dark:from-violet-950/50 dark:to-zinc-950">
@@ -26,6 +33,12 @@ export default async function EntrarPage() {
             Drive.
           </p>
         </div>
+
+        {erroLogin && (
+          <p className="w-full rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+            {erroLogin}
+          </p>
+        )}
 
         {emWebview ? (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">

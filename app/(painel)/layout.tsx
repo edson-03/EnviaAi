@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Logo } from "@/components/logo";
+import { ehAdmin } from "@/lib/admin";
 import { auth } from "@/lib/auth";
 import { primeiroNome } from "@/lib/formatar";
 import { BotaoSair } from "./dashboard/botao-sair";
@@ -44,6 +45,14 @@ export default async function PainelLayout({ children }: { children: React.React
                 <Link href="/dashboard/conta" className="block rounded-lg px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
                   Sua conta
                 </Link>
+                {ehAdmin(usuario.email) && (
+                  <Link
+                    href="/admin"
+                    className="block rounded-lg px-3 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-950/40"
+                  >
+                    Administração
+                  </Link>
+                )}
                 <BotaoSair className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40" />
               </div>
             </details>

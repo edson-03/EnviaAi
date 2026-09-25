@@ -26,6 +26,7 @@ export type Album = {
   mensagemBoasVindas?: string;
   galeriaPublica: boolean;
   ativo: boolean;
+  suspenso?: boolean; // pelo /admin; o dono não consegue reverter
   createdAt: Date;
 };
 

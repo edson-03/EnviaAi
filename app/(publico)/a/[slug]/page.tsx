@@ -8,12 +8,26 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
   const { slug } = await params;
   const album = await albums.findOne(
     { slug },
-    { projection: { titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1, corTema: 1, capaDriveFileId: 1 } },
+    {
+      projection: {
+        titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1, suspenso: 1, corTema: 1, capaDriveFileId: 1,
+      },
+    },
   );
   if (!album) notFound();
 
-  const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { name: 1 } });
+  const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { name: 1, suspenso: 1 } });
   const cor = corDoAlbum(album.corTema);
+
+  // Suspenso pelo /admin (álbum ou dono): não mostra nada do evento.
+  if (album.suspenso || dono?.suspenso) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
+        <p className="text-lg font-semibold">Álbum indisponível</p>
+        <p className="mt-1 text-sm text-zinc-500">Este álbum não está disponível no momento.</p>
+      </main>
+    );
+  }
 
   return (
     // --cor: cor escolhida pelo organizador; os tons claros saem dela com color-mix.

@@ -34,6 +34,12 @@ export default async function AlbumLayout({
             Pasta no Drive ↗
           </a>
         </div>
+        {album.suspenso && (
+          <p className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
+            <strong>Álbum suspenso pelo suporte.</strong> Os convidados não conseguem abrir nem enviar arquivos. Os
+            arquivos já recebidos continuam no seu Drive. Dúvidas: edsonsilvat03@gmail.com.
+          </p>
+        )}
         <AbasAlbum slug={slug} />
       </div>
       <div className="mt-6 print:mt-0">{children}</div>

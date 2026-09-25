@@ -1,6 +1,6 @@
 // Pública: cria sessão resumable no Drive do dono do álbum, já dentro da pasta do álbum.
 // O navegador do convidado envia o arquivo direto ao Drive com a URL devolvida.
-import { albums, uploads } from "@/lib/mongodb";
+import { albums, db, uploads } from "@/lib/mongodb";
 import { DriveDesconectado, obterAccessToken } from "@/lib/google";
 import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
 import {
@@ -35,8 +35,12 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Arquivo muito grande" }, { status: 400 });
   }
 
-  const album = await albums.findOne({ slug }, { projection: { ownerId: 1, driveFolderId: 1, ativo: 1 } });
+  const album = await albums.findOne({ slug }, { projection: { ownerId: 1, driveFolderId: 1, ativo: 1, suspenso: 1 } });
   if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
+  const donoSuspenso = await db.collection("user").countDocuments({ _id: album.ownerId, suspenso: true }, { limit: 1 });
+  if (album.suspenso || donoSuspenso) {
+    return Response.json({ erro: "Este álbum está indisponível" }, { status: 403 });
+  }
   if (!album.ativo) {
     return Response.json({ erro: "Este álbum não está recebendo arquivos no momento" }, { status: 403 });
   }
