@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { BotaoVoltar } from "@/components/botao-voltar";
 import { auth } from "@/lib/auth";
 import { FormAlbum } from "./form-album";
 
@@ -10,9 +10,7 @@ export default async function NovoAlbumPage() {
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 py-8">
-      <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-violet-600">
-        ← Seus álbuns
-      </Link>
+      <BotaoVoltar href="/dashboard">Seus álbuns</BotaoVoltar>
       <div className="cartao mt-4 p-6">
         <h1 className="text-2xl font-bold tracking-tight">Novo álbum</h1>
         <p className="mt-1 text-sm text-zinc-500">

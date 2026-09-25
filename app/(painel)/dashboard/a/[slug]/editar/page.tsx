@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ObjectId } from "mongodb";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { BotaoVoltar } from "@/components/botao-voltar";
 import { auth } from "@/lib/auth";
 import { albums } from "@/lib/mongodb";
 import { editarAlbum } from "../actions";
@@ -17,9 +17,7 @@ export default async function EditarAlbumPage({ params }: { params: Promise<{ sl
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 py-8">
-      <Link href={`/dashboard/a/${slug}`} className="text-sm text-zinc-500 hover:text-violet-600">
-        ← {album.titulo}
-      </Link>
+      <BotaoVoltar href={`/dashboard/a/${slug}`}>{album.titulo}</BotaoVoltar>
       <div className="cartao mt-4 p-6">
         <h1 className="text-2xl font-bold tracking-tight">Editar álbum</h1>
         <p className="mt-1 text-sm text-zinc-500">O link e o QR code continuam os mesmos.</p>

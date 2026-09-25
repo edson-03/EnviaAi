@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
+import { BotaoVoltar } from "@/components/botao-voltar";
 import { auth } from "@/lib/auth";
 import { statusDrive } from "@/lib/google";
 import { albums, uploads } from "@/lib/mongodb";
@@ -44,9 +45,7 @@ export default async function AlbumPainelPage({ params }: { params: Promise<{ sl
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-8">
-      <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-violet-600">
-        ← Seus álbuns
-      </Link>
+      <BotaoVoltar href="/dashboard">Seus álbuns</BotaoVoltar>
       <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           {album.tipoEvento && <p className="text-sm font-medium text-violet-600">{album.tipoEvento}</p>}
