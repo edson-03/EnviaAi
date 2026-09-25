@@ -155,6 +155,12 @@ export default async function DashboardPage() {
           })}
         </ul>
       )}
+
+      <p className="mt-12 text-center text-sm">
+        <Link href="/dashboard/conta" className="text-zinc-500 hover:text-violet-600">
+          Sua conta
+        </Link>
+      </p>
     </main>
   );
 }
