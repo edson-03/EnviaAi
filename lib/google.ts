@@ -50,6 +50,17 @@ export async function criarPasta(userId: string, nome: string) {
   return id as string;
 }
 
+export async function renomearPasta(userId: string, folderId: string, nome: string) {
+  const token = await obterAccessToken(userId);
+  const res = await fetch(`${DRIVE_API}/files/${folderId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name: nome }),
+  });
+  if (await acessoNegado(res)) throw new DriveDesconectado();
+  if (!res.ok) throw new Error(`Drive files.update falhou: ${res.status}`);
+}
+
 export type StatusDrive = { conectado: true; livreBytes: number | null } | { conectado: false };
 
 export async function statusDrive(userId: string): Promise<StatusDrive> {

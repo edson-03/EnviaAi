@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { criarPasta, DriveDesconectado } from "@/lib/google";
 import { albums } from "@/lib/mongodb";
-import { TIPOS_EVENTO } from "./tipos-evento";
+import { lerCamposAlbum } from "./campos-album";
 
 export type EstadoForm = { erro?: string };
 
@@ -29,14 +29,9 @@ export async function criarAlbum(_: EstadoForm, form: FormData): Promise<EstadoF
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/entrar");
 
-  const titulo = String(form.get("titulo") ?? "").trim();
-  const tipoEvento = String(form.get("tipoEvento") ?? "");
-  const data = String(form.get("dataEvento") ?? "");
-
-  if (!titulo || titulo.length > 120) return { erro: "Informe um título de até 120 caracteres." };
-  if (tipoEvento && !TIPOS_EVENTO.includes(tipoEvento)) return { erro: "Tipo de evento inválido." };
-  const dataEvento = data ? new Date(`${data}T00:00:00Z`) : undefined;
-  if (dataEvento && isNaN(dataEvento.getTime())) return { erro: "Data inválida." };
+  const lido = lerCamposAlbum(form);
+  if ("erro" in lido) return lido;
+  const { titulo, tipoEvento, dataEvento } = lido.campos;
 
   let driveFolderId: string;
   try {

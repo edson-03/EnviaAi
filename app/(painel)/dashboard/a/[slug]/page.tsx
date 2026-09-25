@@ -55,14 +55,19 @@ export default async function AlbumPainelPage({ params }: { params: Promise<{ sl
             {!album.ativo && <EtiquetaPausado />}
           </h1>
         </div>
-        <a
-          href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-secundario"
-        >
-          Abrir pasta no Drive ↗
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/dashboard/a/${slug}/editar`} className="btn-secundario">
+            Editar
+          </Link>
+          <a
+            href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-secundario"
+          >
+            Abrir pasta no Drive ↗
+          </a>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
