@@ -6,6 +6,8 @@ import QRCode from "qrcode";
 import { auth } from "@/lib/auth";
 import { statusDrive } from "@/lib/google";
 import { albums, uploads } from "@/lib/mongodb";
+import { EtiquetaPausado } from "../../etiqueta-pausado";
+import { AcoesAlbum } from "./acoes-album";
 import { BotaoCopiar } from "./botao-copiar";
 
 const LIMITE_LISTA = 200;
@@ -48,7 +50,10 @@ export default async function AlbumPainelPage({ params }: { params: Promise<{ sl
       <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
         <div>
           {album.tipoEvento && <p className="text-sm font-medium text-violet-600">{album.tipoEvento}</p>}
-          <h1 className="text-3xl font-bold tracking-tight">{album.titulo}</h1>
+          <h1 className="flex flex-wrap items-center gap-3 text-3xl font-bold tracking-tight">
+            {album.titulo}
+            {!album.ativo && <EtiquetaPausado />}
+          </h1>
         </div>
         <a
           href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
@@ -154,6 +159,8 @@ export default async function AlbumPainelPage({ params }: { params: Promise<{ sl
           <p className="mt-2 text-xs text-zinc-500">Mostrando os {LIMITE_LISTA} mais recentes. Todos estão no Drive.</p>
         )}
       </section>
+
+      <AcoesAlbum slug={slug} ativo={album.ativo} />
     </main>
   );
 }

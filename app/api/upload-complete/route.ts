@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Dados inválidos" }, { status: 400 });
   }
 
-  const album = await albums.findOne({ slug, ativo: true }, { projection: { ownerId: 1, driveFolderId: 1 } });
+  // Sem filtrar por "ativo": um envio que terminou logo depois da pausa já está no Drive e deve ser registrado.
+  const album = await albums.findOne({ slug }, { projection: { ownerId: 1, driveFolderId: 1 } });
   if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
 
   let token: string;

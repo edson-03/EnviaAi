@@ -34,8 +34,11 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Arquivo muito grande" }, { status: 400 });
   }
 
-  const album = await albums.findOne({ slug, ativo: true }, { projection: { ownerId: 1, driveFolderId: 1 } });
+  const album = await albums.findOne({ slug }, { projection: { ownerId: 1, driveFolderId: 1, ativo: 1 } });
   if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
+  if (!album.ativo) {
+    return Response.json({ erro: "Este álbum não está recebendo arquivos no momento" }, { status: 403 });
+  }
   if ((await uploads.countDocuments({ albumId: album._id })) >= MAX_ARQUIVOS_POR_ALBUM) {
     return Response.json({ erro: "Este álbum atingiu o limite de arquivos" }, { status: 403 });
   }
@@ -71,7 +74,12 @@ export async function POST(req: Request) {
 
   const uploadUrl = res.headers.get("location");
   if (!res.ok || !uploadUrl) {
-    console.error("Drive recusou a sessão", res.status, await res.text());
+    const corpo = await res.text();
+    // O Drive recusa já na criação da sessão quando o arquivo não cabe no espaço livre.
+    if (res.status === 403 && corpo.includes("storageQuotaExceeded")) {
+      return Response.json({ erro: "O álbum não tem mais espaço para receber arquivos" }, { status: 507 });
+    }
+    console.error("Drive recusou a sessão", res.status, corpo);
     return Response.json({ erro: "Não foi possível iniciar o envio" }, { status: 502 });
   }
 

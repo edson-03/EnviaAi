@@ -6,8 +6,8 @@ import { EnvioConvidado } from "./envio-convidado";
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const album = await albums.findOne(
-    { slug, ativo: true },
-    { projection: { titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1 } },
+    { slug },
+    { projection: { titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1 } },
   );
   if (!album) notFound();
 
@@ -28,7 +28,14 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           </p>
         </div>
 
-        <EnvioConvidado slug={slug} />
+        {album.ativo ? (
+          <EnvioConvidado slug={slug} />
+        ) : (
+          <div className="cartao mt-8 p-6 text-center">
+            <p className="font-semibold">Este álbum não está recebendo arquivos no momento</p>
+            <p className="mt-1 text-sm text-zinc-500">Fale com quem organizou o evento.</p>
+          </div>
+        )}
 
         <footer className="mt-10 space-y-3 text-center text-xs text-zinc-500">
           <p>

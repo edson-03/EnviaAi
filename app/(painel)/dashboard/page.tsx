@@ -8,6 +8,9 @@ import { statusDrive } from "@/lib/google";
 import { albums, uploads } from "@/lib/mongodb";
 import { BotaoCopiar } from "./a/[slug]/botao-copiar";
 import { BotaoReconectar } from "./botao-reconectar";
+import { EtiquetaPausado } from "./etiqueta-pausado";
+
+const POUCO_ESPACO_BYTES = 1024 ** 3; // 1 GB
 
 function formatarGB(bytes: number) {
   return `${(bytes / 1024 ** 3).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} GB`;
@@ -20,7 +23,10 @@ export default async function DashboardPage() {
   const [drive, lista] = await Promise.all([
     statusDrive(session.user.id),
     albums
-      .find({ ownerId: new ObjectId(session.user.id) }, { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1 } })
+      .find(
+        { ownerId: new ObjectId(session.user.id) },
+        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1 } },
+      )
       .sort({ createdAt: -1 })
       .toArray(),
   ]);
@@ -51,6 +57,17 @@ export default async function DashboardPage() {
           </Link>
         )}
       </div>
+
+      {drive.conectado && drive.livreBytes !== null && drive.livreBytes < POUCO_ESPACO_BYTES && (
+        <div className="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+          <strong>Seu Google Drive está quase cheio</strong> ({formatarGB(drive.livreBytes)} livres). Quando acabar o
+          espaço, os convidados não conseguem mais enviar arquivos. Libere espaço ou aumente o armazenamento em{" "}
+          <a href="https://one.google.com/storage" target="_blank" rel="noreferrer" className="underline">
+            one.google.com/storage
+          </a>
+          .
+        </div>
+      )}
 
       {drive.conectado ? (
         <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
@@ -100,9 +117,12 @@ export default async function DashboardPage() {
                         .join(" · ") || "Sem data"}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-violet-600/10 px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300">
-                    {total} {total === 1 ? "arquivo" : "arquivos"}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    <span className="rounded-full bg-violet-600/10 px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300">
+                      {total} {total === 1 ? "arquivo" : "arquivos"}
+                    </span>
+                    {!a.ativo && <EtiquetaPausado />}
+                  </div>
                 </div>
 
                 <Link
