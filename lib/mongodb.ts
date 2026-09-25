@@ -21,6 +21,7 @@ export type Album = {
   dataEvento?: Date;
   driveFolderId: string;
   capaUrl?: string;
+  capaDriveFileId?: string; // imagem de capa na pasta do álbum; servida por /api/capa/[slug]
   corTema: string;
   mensagemBoasVindas?: string;
   galeriaPublica: boolean;

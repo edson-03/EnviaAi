@@ -4,16 +4,20 @@ import { Logo } from "@/components/logo";
 import { auth } from "@/lib/auth";
 import { primeiroNome } from "@/lib/formatar";
 import { BotaoSair } from "./dashboard/botao-sair";
+import { NavPrincipal } from "./nav-principal";
 
 export default async function PainelLayout({ children }: { children: React.ReactNode }) {
   const session = await auth.api.getSession({ headers: await headers() });
   const usuario = session?.user;
 
   return (
-    <div className="fundo-painel flex flex-col bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.10),transparent_60%)]">
-      <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur dark:border-zinc-800/70 dark:bg-zinc-950/80">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-          <Logo href="/dashboard" />
+    <div className="fundo-painel flex flex-col bg-[radial-gradient(ellipse_at_top,rgba(124,58,237,0.10),transparent_60%)] print:bg-white print:bg-none">
+      <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-white/80 backdrop-blur print:hidden dark:border-zinc-800/70 dark:bg-zinc-950/80">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Logo href="/dashboard" />
+            {usuario && <NavPrincipal />}
+          </div>
           {usuario && (
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full p-1 pr-3 transition hover:bg-zinc-100 dark:hover:bg-zinc-800">

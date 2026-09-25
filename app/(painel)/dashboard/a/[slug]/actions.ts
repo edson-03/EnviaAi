@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { renomearPasta } from "@/lib/google";
+import { CORES_TEMA } from "@/lib/cores";
+import { apagarArquivo, DriveDesconectado, enviarArquivoPequeno, renomearPasta } from "@/lib/google";
 import { albums, uploads } from "@/lib/mongodb";
 import { lerCamposAlbum } from "../../novo/campos-album";
 import type { EstadoForm } from "../../novo/actions";
@@ -18,7 +19,51 @@ async function donoId() {
 
 export async function definirAtivo(slug: string, ativo: boolean) {
   await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { ativo } });
-  revalidatePath(`/dashboard/a/${slug}`);
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
+}
+
+export async function salvarCor(slug: string, cor: string) {
+  if (!CORES_TEMA.some((c) => c.hex === cor)) return;
+  await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { corTema: cor } });
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
+}
+
+const TIPOS_CAPA = ["image/jpeg", "image/png", "image/webp"];
+const MAX_CAPA_BYTES = 1.5 * 1024 * 1024; // o navegador já reduz a imagem antes de enviar
+
+export async function enviarCapa(slug: string, form: FormData): Promise<EstadoForm> {
+  const ownerId = await donoId();
+  const arquivo = form.get("capa");
+  if (!(arquivo instanceof File) || !TIPOS_CAPA.includes(arquivo.type)) return { erro: "Escolha uma imagem JPG, PNG ou WebP." };
+  if (arquivo.size > MAX_CAPA_BYTES) return { erro: "Imagem muito grande. Tente outra foto." };
+
+  const album = await albums.findOne({ slug, ownerId }, { projection: { driveFolderId: 1, capaDriveFileId: 1 } });
+  if (!album) redirect("/dashboard");
+
+  try {
+    const id = await enviarArquivoPequeno(ownerId.toString(), album.driveFolderId, "Capa do álbum (Enviaí)", arquivo);
+    await albums.updateOne({ _id: album._id }, { $set: { capaDriveFileId: id } });
+    if (album.capaDriveFileId) await apagarArquivo(ownerId.toString(), album.capaDriveFileId).catch(() => {});
+  } catch (e) {
+    if (e instanceof DriveDesconectado) return { erro: "Reconecte seu Google Drive no painel e tente de novo." };
+    throw e;
+  }
+
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
+  revalidatePath(`/a/${slug}`);
+  return {};
+}
+
+export async function removerCapa(slug: string) {
+  const ownerId = await donoId();
+  const album = await albums.findOneAndUpdate(
+    { slug, ownerId },
+    { $unset: { capaDriveFileId: 1 } },
+    { projection: { capaDriveFileId: 1 } },
+  );
+  if (album?.capaDriveFileId) await apagarArquivo(ownerId.toString(), album.capaDriveFileId).catch(() => {});
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
+  revalidatePath(`/a/${slug}`);
 }
 
 // O slug não muda: links e QR codes já distribuídos continuam valendo.
@@ -48,7 +93,7 @@ export async function editarAlbum(slug: string, _: EstadoForm, form: FormData): 
     }
   }
 
-  revalidatePath(`/dashboard/a/${slug}`);
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
   redirect(`/dashboard/a/${slug}`);
 }
 

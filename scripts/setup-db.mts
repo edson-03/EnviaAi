@@ -15,6 +15,7 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
         dataEvento: { bsonType: "date" },
         driveFolderId: { bsonType: "string" },
         capaUrl: { bsonType: "string" },
+        capaDriveFileId: { bsonType: "string" },
         corTema: { bsonType: "string", pattern: "^#[0-9a-fA-F]{6}$" },
         mensagemBoasVindas: { bsonType: "string", maxLength: 500 },
         galeriaPublica: { bsonType: "bool" },

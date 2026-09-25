@@ -161,12 +161,12 @@ export function EnvioConvidado({ slug }: { slug: string }) {
           </span>
         </label>
 
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-violet-300 bg-violet-50 px-4 py-8 text-center transition hover:border-violet-500 hover:bg-violet-100 dark:border-violet-800 dark:bg-violet-950/30 dark:hover:border-violet-600">
-          <svg viewBox="0 0 24 24" className="h-10 w-10 text-violet-600" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[color-mix(in_srgb,var(--cor)_40%,transparent)] bg-[color-mix(in_srgb,var(--cor)_7%,transparent)] px-4 py-8 text-center transition hover:border-[var(--cor)] hover:bg-[color-mix(in_srgb,var(--cor)_12%,transparent)]">
+          <svg viewBox="0 0 24 24" className="h-10 w-10 text-[var(--cor)]" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
             <path d="M12 16V4m0 0-4 4m4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
           </svg>
-          <span className="font-semibold text-violet-700 dark:text-violet-300">
+          <span className="font-semibold text-[var(--cor)]">
             {itens.length ? "Enviar mais fotos e vídeos" : "Escolher fotos e vídeos"}
           </span>
           <span className="text-xs text-zinc-500">Você pode selecionar vários de uma vez</span>
@@ -220,7 +220,7 @@ export function EnvioConvidado({ slug }: { slug: string }) {
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      it.status === "erro" ? "bg-red-500" : it.status === "ok" ? "bg-green-500" : "bg-violet-600"
+                      it.status === "erro" ? "bg-red-500" : it.status === "ok" ? "bg-green-500" : "bg-[var(--cor)]"
                     }`}
                     style={{ width: `${pct}%` }}
                   />

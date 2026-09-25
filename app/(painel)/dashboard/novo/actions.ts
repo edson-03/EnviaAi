@@ -5,6 +5,7 @@ import { ObjectId, MongoServerError } from "mongodb";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { COR_PADRAO } from "@/lib/cores";
 import { criarPasta, DriveDesconectado } from "@/lib/google";
 import { albums } from "@/lib/mongodb";
 import { lerCamposAlbum } from "./campos-album";
@@ -51,7 +52,7 @@ export async function criarAlbum(_: EstadoForm, form: FormData): Promise<EstadoF
         ...(tipoEvento && { tipoEvento }),
         ...(dataEvento && { dataEvento }),
         driveFolderId,
-        corTema: "#18181b",
+        corTema: COR_PADRAO,
         galeriaPublica: false,
         ativo: true,
         createdAt: new Date(),

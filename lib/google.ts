@@ -61,6 +61,37 @@ export async function renomearPasta(userId: string, folderId: string, nome: stri
   if (!res.ok) throw new Error(`Drive files.update falhou: ${res.status}`);
 }
 
+// Envio pequeno (ex.: capa) em uma requisição multipart. Arquivos de convidados NÃO usam isto.
+export async function enviarArquivoPequeno(userId: string, folderId: string, nome: string, arquivo: Blob) {
+  const token = await obterAccessToken(userId);
+  const limite = `enviai${Date.now()}`;
+  const corpo = new Blob([
+    `--${limite}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n`,
+    JSON.stringify({ name: nome, parents: [folderId] }),
+    `\r\n--${limite}\r\nContent-Type: ${arquivo.type}\r\n\r\n`,
+    arquivo,
+    `\r\n--${limite}--`,
+  ]);
+  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": `multipart/related; boundary=${limite}` },
+    body: corpo,
+  });
+  if (await acessoNegado(res)) throw new DriveDesconectado();
+  if (!res.ok) throw new Error(`Drive upload multipart falhou: ${res.status}`);
+  return ((await res.json()) as { id: string }).id;
+}
+
+export async function apagarArquivo(userId: string, fileId: string) {
+  const token = await obterAccessToken(userId);
+  await fetch(`${DRIVE_API}/files/${fileId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+}
+
+export async function baixarArquivo(userId: string, fileId: string) {
+  const token = await obterAccessToken(userId);
+  return fetch(`${DRIVE_API}/files/${fileId}?alt=media`, { headers: { Authorization: `Bearer ${token}` } });
+}
+
 export type StatusDrive = { conectado: true; livreBytes: number | null } | { conectado: false };
 
 export async function statusDrive(userId: string): Promise<StatusDrive> {
