@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function BotaoCopiar({ texto }: { texto: string }) {
+export function BotaoCopiar({ texto, className = "btn-secundario" }: { texto: string; className?: string }) {
   const [copiado, setCopiado] = useState(false);
 
   async function copiar() {
@@ -12,7 +12,7 @@ export function BotaoCopiar({ texto }: { texto: string }) {
   }
 
   return (
-    <button onClick={copiar} className="btn-secundario">
+    <button onClick={copiar} className={className}>
       {copiado ? "✓ Copiado!" : "Copiar link"}
     </button>
   );
