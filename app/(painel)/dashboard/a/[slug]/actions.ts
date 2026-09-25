@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -20,6 +21,21 @@ async function donoId() {
 export async function definirAtivo(slug: string, ativo: boolean) {
   await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { ativo } });
   revalidatePath(`/dashboard/a/${slug}`, "layout");
+}
+
+// Cria (ou troca) o link secreto do telão. Trocar invalida o link anterior.
+export async function gerarLinkTelao(slug: string) {
+  const telaoToken = randomBytes(18).toString("base64url"); // 24 caracteres
+  await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { telaoToken } });
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
+}
+
+// Ocultar/mostrar uma foto no telão (campo "aprovado" do envio).
+export async function definirVisivelNoTelao(slug: string, driveFileId: string, visivel: boolean) {
+  const album = await albums.findOne({ slug, ownerId: await donoId() }, { projection: { _id: 1 } });
+  if (!album) return;
+  await uploads.updateOne({ albumId: album._id, driveFileId }, { $set: { aprovado: visivel } });
+  revalidatePath(`/dashboard/a/${slug}/envios`);
 }
 
 export async function salvarCor(slug: string, cor: string) {

@@ -27,6 +27,7 @@ export type Album = {
   galeriaPublica: boolean;
   ativo: boolean;
   suspenso?: boolean; // pelo /admin; o dono não consegue reverter
+  telaoToken?: string; // link secreto /telao/<token>; trocar = invalidar o anterior
   createdAt: Date;
 };
 

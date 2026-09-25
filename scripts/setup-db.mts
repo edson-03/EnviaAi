@@ -21,11 +21,13 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
         galeriaPublica: { bsonType: "bool" },
         ativo: { bsonType: "bool" },
         suspenso: { bsonType: "bool" },
+        telaoToken: { bsonType: "string", minLength: 20 },
         createdAt: { bsonType: "date" },
       },
     },
     indices: [
       [{ slug: 1 }, { unique: true }],
+      [{ telaoToken: 1 }, { unique: true, sparse: true }],
       [{ ownerId: 1, createdAt: -1 }],
     ],
   },

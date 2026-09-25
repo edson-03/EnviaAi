@@ -92,6 +92,21 @@ export async function baixarArquivo(userId: string, fileId: string) {
   return fetch(`${DRIVE_API}/files/${fileId}?alt=media`, { headers: { Authorization: `Bearer ${token}` } });
 }
 
+// Miniatura JPEG gerada pelo Drive (serve também para HEIC). null se o Drive ainda não gerou.
+export async function baixarMiniatura(userId: string, fileId: string, lado: number) {
+  const token = await obterAccessToken(userId);
+  const meta = await fetch(`${DRIVE_API}/files/${fileId}?fields=thumbnailLink`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!meta.ok) return null;
+  const { thumbnailLink } = (await meta.json()) as { thumbnailLink?: string };
+  if (!thumbnailLink) return null;
+  // O link vem com "=s220"; troca pelo tamanho pedido.
+  const res = await fetch(thumbnailLink.replace(/=s\d+$/, `=s${lado}`), { headers: { Authorization: `Bearer ${token}` } });
+  return res.ok ? res : null;
+}
+
 export type StatusDrive = { conectado: true; livreBytes: number | null } | { conectado: false };
 
 export async function statusDrive(userId: string): Promise<StatusDrive> {

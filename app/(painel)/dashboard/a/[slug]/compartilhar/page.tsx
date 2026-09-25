@@ -1,7 +1,11 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 import { BotaoCopiar } from "../botao-copiar";
+import { gerarLinkTelao } from "../actions";
 import { albumDoDono, linkDoAlbum } from "../dados";
+import { BotaoTrocarTelao } from "./botao-trocar-telao";
+
+const linkTelao = (token: string) => `${process.env.NEXT_PUBLIC_APP_URL}/telao/${token}`;
 
 const MODELOS = [
   { id: "cartaz", titulo: "Cartaz A4", texto: "Uma folha A4 com QR grande. Para a entrada, o bolo ou a pista." },
@@ -50,6 +54,40 @@ export default async function CompartilharPage({ params }: { params: Promise<{ s
             </a>
           </div>
         </div>
+      </section>
+
+      <section className="cartao p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-xl">
+            <h2 className="font-semibold">Telão ao vivo</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Abra este link na TV ou no projetor do evento: as fotos aparecem em tela cheia assim que chegam, com o nome e o
+              recado de quem enviou. Para tirar uma foto do telão, use a aba Envios.
+            </p>
+          </div>
+          {!album.telaoToken && (
+            <form action={gerarLinkTelao.bind(null, slug)}>
+              <button className="btn-primario">Criar link do telão</button>
+            </form>
+          )}
+        </div>
+        {album.telaoToken && (
+          <>
+            <p className="mt-4 break-all rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs dark:bg-zinc-800">
+              {linkTelao(album.telaoToken)}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a href={linkTelao(album.telaoToken)} target="_blank" rel="noreferrer" className="btn-primario">
+                Abrir telão ↗
+              </a>
+              <BotaoCopiar texto={linkTelao(album.telaoToken)} />
+              <BotaoTrocarTelao slug={slug} />
+            </div>
+            <p className="mt-3 text-xs text-zinc-500">
+              Guarde este link só para você: quem tiver o link vê as fotos do telão. Se ele vazar, use “Trocar link”.
+            </p>
+          </>
+        )}
       </section>
 
       <section className="mt-4">

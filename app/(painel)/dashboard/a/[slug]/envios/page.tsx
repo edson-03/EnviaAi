@@ -1,5 +1,6 @@
 import { formatarBytes } from "@/lib/formatar";
 import { uploads } from "@/lib/mongodb";
+import { definirVisivelNoTelao } from "../actions";
 import { albumDoDono } from "../dados";
 
 const LIMITE_LISTA = 200;
@@ -46,6 +47,20 @@ export default async function EnviosPage({ params }: { params: Promise<{ slug: s
               </p>
               {u.legenda && <p className="mt-1 truncate text-xs italic text-zinc-600 dark:text-zinc-400">“{u.legenda}”</p>}
             </div>
+            {u.mimeType.startsWith("image/") && (
+              <form action={definirVisivelNoTelao.bind(null, slug, u.driveFileId, !u.aprovado)} className="shrink-0">
+                <button
+                  title={u.aprovado ? "Esta foto aparece no telão" : "Esta foto não aparece no telão"}
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
+                    u.aprovado
+                      ? "bg-zinc-100 text-zinc-600 hover:bg-red-50 hover:text-red-600 dark:bg-zinc-800 dark:text-zinc-300"
+                      : "bg-amber-100 text-amber-800 hover:bg-green-50 hover:text-green-700 dark:bg-amber-950 dark:text-amber-300"
+                  }`}
+                >
+                  {u.aprovado ? "Ocultar do telão" : "Oculta · mostrar"}
+                </button>
+              </form>
+            )}
             <a
               href={`https://drive.google.com/file/d/${u.driveFileId}/view`}
               target="_blank"
