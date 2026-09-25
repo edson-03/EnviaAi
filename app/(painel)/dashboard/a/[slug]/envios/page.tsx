@@ -1,20 +1,42 @@
+import Link from "next/link";
+import type { Filter } from "mongodb";
 import { formatarBytes } from "@/lib/formatar";
-import { uploads } from "@/lib/mongodb";
+import { uploads, type Upload } from "@/lib/mongodb";
 import { definirVisivelNoTelao } from "../actions";
 import { albumDoDono } from "../dados";
+import { Miniatura } from "./miniatura";
 
-const LIMITE_LISTA = 200;
+const LIMITE = 200;
 
-export default async function EnviosPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+const FILTROS = [
+  { id: "", rotulo: "Todos" },
+  { id: "fotos", rotulo: "Fotos" },
+  { id: "videos", rotulo: "Vídeos" },
+  { id: "ocultas", rotulo: "Ocultas" },
+] as const;
+
+export default async function EnviosPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ tipo?: string }>;
+}) {
+  const [{ slug }, { tipo = "" }] = await Promise.all([params, searchParams]);
   const { album } = await albumDoDono(slug);
 
-  const [total, lista] = await Promise.all([
+  const filtro: Filter<Upload> = { albumId: album._id };
+  if (tipo === "fotos") filtro.mimeType = /^image\//;
+  if (tipo === "videos") filtro.mimeType = /^video\//;
+  if (tipo === "ocultas") filtro.aprovado = false;
+
+  const [totalAlbum, total, lista] = await Promise.all([
     uploads.countDocuments({ albumId: album._id }),
-    uploads.find({ albumId: album._id }).sort({ createdAt: -1 }).limit(LIMITE_LISTA).toArray(),
+    uploads.countDocuments(filtro),
+    uploads.find(filtro).sort({ createdAt: -1 }).limit(LIMITE).toArray(),
   ]);
 
-  if (lista.length === 0) {
+  if (totalAlbum === 0) {
     return (
       <div className="cartao px-6 py-14 text-center text-sm text-zinc-500">
         Nenhum arquivo recebido ainda. Compartilhe o link ou o QR code com os convidados.
@@ -23,60 +45,90 @@ export default async function EnviosPage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <>
-      <ul className="cartao divide-y divide-zinc-100 dark:divide-zinc-800">
-        {lista.map((u) => (
-          <li key={u.driveFileId} className="flex items-center gap-3 px-4 py-3 text-sm">
-            <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${
-                u.mimeType.startsWith("video/")
-                  ? "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
-                  : "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+          {FILTROS.map((f) => (
+            <Link
+              key={f.id}
+              href={f.id ? `?tipo=${f.id}` : "?"}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
+                tipo === f.id ? "bg-white shadow-sm dark:bg-zinc-900" : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
               }`}
             >
-              {u.mimeType.startsWith("video/") ? "VÍDEO" : "FOTO"}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">{u.nomeArquivo}</p>
-              <p className="truncate text-xs text-zinc-500">
-                {[
-                  u.nomeConvidado ?? "Anônimo",
-                  formatarBytes(u.tamanhoBytes),
-                  u.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" }),
-                ].join(" · ")}
-              </p>
-              {u.legenda && <p className="mt-1 truncate text-xs italic text-zinc-600 dark:text-zinc-400">“{u.legenda}”</p>}
-            </div>
-            {u.mimeType.startsWith("image/") && (
-              <form action={definirVisivelNoTelao.bind(null, slug, u.driveFileId, !u.aprovado)} className="shrink-0">
-                <button
-                  title={u.aprovado ? "Esta foto aparece no telão" : "Esta foto não aparece no telão"}
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium transition ${
-                    u.aprovado
-                      ? "bg-zinc-100 text-zinc-600 hover:bg-red-50 hover:text-red-600 dark:bg-zinc-800 dark:text-zinc-300"
-                      : "bg-amber-100 text-amber-800 hover:bg-green-50 hover:text-green-700 dark:bg-amber-950 dark:text-amber-300"
-                  }`}
-                >
-                  {u.aprovado ? "Ocultar do telão" : "Oculta · mostrar"}
-                </button>
-              </form>
-            )}
-            <a
-              href={`https://drive.google.com/file/d/${u.driveFileId}/view`}
-              target="_blank"
-              rel="noreferrer"
-              className="shrink-0 text-sm font-medium text-violet-600 hover:text-violet-700"
-            >
-              Ver ↗
-            </a>
-          </li>
-        ))}
-      </ul>
-      {total > LIMITE_LISTA && (
-        <p className="mt-2 text-xs text-zinc-500">
-          Mostrando os {LIMITE_LISTA} mais recentes de {total.toLocaleString("pt-BR")}. Todos estão no Drive.
+              {f.rotulo}
+            </Link>
+          ))}
+        </div>
+        <p className="text-sm text-zinc-500">
+          {total.toLocaleString("pt-BR")} {total === 1 ? "arquivo" : "arquivos"}
+          {total > LIMITE && ` · mostrando os ${LIMITE} mais recentes`}
         </p>
+      </div>
+
+      {lista.length === 0 ? (
+        <div className="cartao px-6 py-14 text-center text-sm text-zinc-500">Nada por aqui neste filtro.</div>
+      ) : (
+        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {lista.map((u) => {
+            const video = u.mimeType.startsWith("video/");
+            return (
+              <li key={u.driveFileId} className="cartao group overflow-hidden">
+                <div className={`relative aspect-square bg-zinc-100 dark:bg-zinc-800 ${u.aprovado ? "" : "opacity-40"}`}>
+                  <Miniatura src={`/api/miniatura/${slug}/${encodeURIComponent(u.driveFileId)}`} video={video} />
+                  {video && (
+                    <span className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">
+                      ▶ vídeo
+                    </span>
+                  )}
+                  {!u.aprovado && (
+                    <span className="absolute right-2 top-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">
+                      Oculta
+                    </span>
+                  )}
+                  <a
+                    href={`https://drive.google.com/file/d/${u.driveFileId}/view`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="absolute inset-0"
+                    aria-label={`Abrir ${u.nomeArquivo} no Drive`}
+                  />
+                </div>
+
+                <div className="p-2.5">
+                  <p className="truncate text-sm font-medium" title={u.nomeConvidado ?? "Anônimo"}>
+                    {u.nomeConvidado ?? "Anônimo"}
+                    {u.legenda && (
+                      <span className="ml-1 inline-block align-[-2px] text-violet-600" title={`Recado: ${u.legenda}`}>
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-label="Tem recado">
+                          <path d="M4 5h16v11H9l-5 4z" strokeLinejoin="round" />
+                        </svg>
+                      </span>
+                    )}
+                  </p>
+                  <p className="truncate text-xs text-zinc-500">
+                    {u.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })} ·{" "}
+                    {formatarBytes(u.tamanhoBytes)}
+                  </p>
+                  {!video && (
+                    <form action={definirVisivelNoTelao.bind(null, slug, u.driveFileId, !u.aprovado)} className="mt-2">
+                      <button
+                        className={`w-full rounded-md px-2 py-1 text-xs font-medium transition ${
+                          u.aprovado
+                            ? "bg-zinc-100 text-zinc-600 hover:bg-red-50 hover:text-red-600 dark:bg-zinc-800 dark:text-zinc-300"
+                            : "bg-amber-100 text-amber-800 hover:bg-green-50 hover:text-green-700 dark:bg-amber-950 dark:text-amber-300"
+                        }`}
+                      >
+                        {u.aprovado ? "Ocultar do telão" : "Mostrar no telão"}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </>
+    </div>
   );
 }
