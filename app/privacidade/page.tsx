@@ -97,7 +97,8 @@ export default function PrivacidadePage() {
         <li>endereço IP: cerca de 10 minutos.</li>
       </ul>
       <p>
-        Você pode pedir a exclusão da sua conta e dos seus dados pelo e-mail de contato. Os arquivos continuam no seu
+        Você pode excluir a sua conta e os seus dados a qualquer momento no painel, em &quot;Sua conta&quot;, ou pedir
+        pelo e-mail de contato. Os arquivos continuam no seu
         Google Drive, porque pertencem a você. Você também pode remover o acesso do Enviaí a qualquer momento em{" "}
         <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer">
           myaccount.google.com/permissions

@@ -77,7 +77,7 @@ export default function TermosPage() {
       <h2>8. Suspensão e encerramento</h2>
       <p>
         Podemos suspender álbuns ou contas usados para violar estes termos ou a lei. Você pode parar de usar o Enviaí
-        a qualquer momento e pedir a exclusão da sua conta pelo e-mail de contato.
+        a qualquer momento e excluir a sua conta no painel, em &quot;Sua conta&quot;.
       </p>
 
       <h2>9. Privacidade</h2>
