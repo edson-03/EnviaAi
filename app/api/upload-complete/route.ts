@@ -1,6 +1,8 @@
 // Pública: registra um upload concluído. Não confia no cliente: busca o arquivo no
 // Drive com o token do dono e confere se está na pasta do álbum antes de gravar.
 import { MongoServerError, ObjectId } from "mongodb";
+import { after } from "next/server";
+import { enviarResumoSePreciso } from "@/lib/resumo";
 import { albums, uploads } from "@/lib/mongodb";
 import { DRIVE_API, DriveDesconectado, obterAccessToken } from "@/lib/google";
 import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
@@ -66,6 +68,9 @@ export async function POST(req: Request) {
     // Já registrado (driveFileId único): chamada repetida, tudo certo.
     if (!(e instanceof MongoServerError && e.code === 11000)) throw e;
   }
+
+  // Depois de responder: talvez manda o resumo por e-mail ao dono (no máximo 1 por hora).
+  after(() => enviarResumoSePreciso(album._id).catch((e) => console.error("Falha no resumo por e-mail", e)));
 
   return Response.json({ ok: true });
 }

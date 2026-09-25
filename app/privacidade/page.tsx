@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Política de Privacidade · Enviaí"
 
 export default function PrivacidadePage() {
   return (
-    <PaginaLegal titulo="Política de Privacidade" atualizadoEm="24 de setembro de 2026">
+    <PaginaLegal titulo="Política de Privacidade" atualizadoEm="25 de setembro de 2026">
       <p>
         Esta política explica quais dados o Enviaí coleta, para que usa e quais são os seus direitos, de acordo com a
         Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).
@@ -77,7 +77,8 @@ export default function PrivacidadePage() {
       <ul>
         <li>Google: login e armazenamento dos arquivos no Drive do organizador;</li>
         <li>MongoDB Atlas: banco de dados com as informações dos álbuns e envios;</li>
-        <li>Vercel: hospedagem do site.</li>
+        <li>Vercel: hospedagem do site;</li>
+        <li>Resend: envio dos e-mails de resumo para o organizador (pode ser desligado em “Sua conta”).</li>
       </ul>
       <p>
         Esses fornecedores podem manter servidores fora do Brasil. Nesse caso, a transferência segue as garantias

@@ -28,6 +28,7 @@ export type Album = {
   ativo: boolean;
   suspenso?: boolean; // pelo /admin; o dono não consegue reverter
   telaoToken?: string; // link secreto /telao/<token>; trocar = invalidar o anterior
+  ultimoResumoEm?: Date; // último e-mail de resumo enviado ao dono (máx. 1 por hora)
   createdAt: Date;
 };
 

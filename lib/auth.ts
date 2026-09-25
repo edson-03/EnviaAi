@@ -24,6 +24,7 @@ export const auth = betterAuth({
       // Controlados pelo backend (pagamento / administração); o usuário não pode alterar.
       plano: { type: "string", defaultValue: "free", input: false },
       suspenso: { type: "boolean", defaultValue: false, input: false },
+      resumoEmail: { type: "boolean", defaultValue: true, input: false }, // alterado em "Sua conta"
     },
   },
   databaseHooks: {

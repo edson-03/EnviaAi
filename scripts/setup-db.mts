@@ -22,6 +22,7 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
         ativo: { bsonType: "bool" },
         suspenso: { bsonType: "bool" },
         telaoToken: { bsonType: "string", minLength: 20 },
+        ultimoResumoEm: { bsonType: "date" },
         createdAt: { bsonType: "date" },
       },
     },

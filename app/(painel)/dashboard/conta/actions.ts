@@ -1,6 +1,7 @@
 "use server";
 
 import { ObjectId } from "mongodb";
+import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -8,6 +9,13 @@ import { obterAccessToken } from "@/lib/google";
 import { albums, db, uploads } from "@/lib/mongodb";
 
 export type EstadoExclusao = { erro?: string };
+
+export async function definirResumoEmail(ativo: boolean) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/entrar");
+  await db.collection("user").updateOne({ _id: new ObjectId(session.user.id) }, { $set: { resumoEmail: ativo } });
+  revalidatePath("/dashboard/conta");
+}
 
 // Apaga todos os dados do usuário no Enviaí. Pastas e arquivos continuam no Google Drive dele.
 export async function excluirConta(_: EstadoExclusao, form: FormData): Promise<EstadoExclusao> {

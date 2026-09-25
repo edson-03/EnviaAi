@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { BotaoVoltar } from "@/components/botao-voltar";
 import { auth } from "@/lib/auth";
+import { ChaveResumo } from "./chave-resumo";
 import { FormExcluir } from "./form-excluir";
 
 export default async function ContaPage() {
@@ -17,6 +18,16 @@ export default async function ContaPage() {
         <p className="mt-1 text-sm text-zinc-500">
           {session.user.name} · {session.user.email}
         </p>
+      </div>
+
+      <div className="cartao mt-4 flex items-center justify-between gap-4 p-6">
+        <div>
+          <h2 className="font-semibold">Resumo por e-mail</h2>
+          <p className="mt-1 text-sm text-zinc-500">
+            Avisa quando chegam fotos e vídeos novos nos seus álbuns. No máximo um e-mail por hora de cada álbum.
+          </p>
+        </div>
+        <ChaveResumo ativo={(session.user as { resumoEmail?: boolean }).resumoEmail !== false} />
       </div>
 
       <div className="cartao mt-4 border-red-200 p-6 dark:border-red-900">
