@@ -12,7 +12,7 @@ export default async function AlbumLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { album, premium } = await albumDoDono(slug);
+  const { album, situacao } = await albumDoDono(slug);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 print:max-w-none print:p-0">
@@ -24,21 +24,32 @@ export default async function AlbumLayout({
             <h1 className="flex flex-wrap items-center gap-3 text-3xl font-bold tracking-tight">
               <span className="truncate">{album.titulo}</span>
               {!album.ativo && <EtiquetaPausado />}
-              {premium ? (
+              {situacao.pago ? (
                 <span className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-2.5 py-1 text-xs font-semibold tracking-normal text-white">
-                  Premium
+                  {situacao.plano.nome}
                 </span>
               ) : (
                 <span className="rounded-full bg-zinc-200 px-2.5 py-1 text-xs font-medium tracking-normal text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                  Grátis
+                  {situacao.plano.nome}
                 </span>
               )}
             </h1>
+            {situacao.prazoFinal && (
+              <p className={`mt-1 text-xs ${situacao.prazoEncerrado ? "font-medium text-red-600" : "text-zinc-500"}`}>
+                {situacao.prazoEncerrado ? "Prazo para receber arquivos encerrado em " : "Recebe arquivos até "}
+                {situacao.prazoFinal.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+              </p>
+            )}
+            {situacao.planoVencido && (
+              <p className="mt-1 text-xs font-medium text-amber-600">
+                O plano {situacao.planoVencido} venceu; o álbum voltou às regras do plano grátis.
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
-            {!premium && (
+            {!situacao.pago && (
               <Link href={`/dashboard/a/${slug}/premium`} className="btn-primario">
-                Liberar premium
+                {situacao.planoVencido ? "Renovar plano" : "Ver planos"}
               </Link>
             )}
             <a

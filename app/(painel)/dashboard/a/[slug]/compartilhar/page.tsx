@@ -15,7 +15,7 @@ const MODELOS = [
 
 export default async function CompartilharPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { album, premium } = await albumDoDono(slug);
+  const { album, situacao } = await albumDoDono(slug);
   const link = linkDoAlbum(slug);
 
   const [qrSvg, qrPng] = await Promise.all([
@@ -57,7 +57,7 @@ export default async function CompartilharPage({ params }: { params: Promise<{ s
         </div>
       </section>
 
-      {premium ? (
+      {situacao.plano.telao ? (
         <section className="cartao p-5">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-xl">

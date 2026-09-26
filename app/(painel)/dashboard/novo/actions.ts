@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { COR_PADRAO } from "@/lib/cores";
-import { MENSAGEM_LIMITE_ATIVOS, podeTerMaisUmAlbumAtivo } from "@/lib/planos";
+import { mensagemLimiteAtivos, podeTerMaisUmAlbumAtivo } from "@/lib/planos";
 import { criarPasta, DriveDesconectado } from "@/lib/google";
 import { albums } from "@/lib/mongodb";
 import { lerCamposAlbum } from "./campos-album";
@@ -35,7 +35,7 @@ export async function criarAlbum(_: EstadoForm, form: FormData): Promise<EstadoF
   if ("erro" in lido) return lido;
   const { titulo, tipoEvento, dataEvento } = lido.campos;
 
-  if (!(await podeTerMaisUmAlbumAtivo(new ObjectId(session.user.id)))) return { erro: MENSAGEM_LIMITE_ATIVOS };
+  if (!(await podeTerMaisUmAlbumAtivo(new ObjectId(session.user.id)))) return { erro: await mensagemLimiteAtivos() };
 
   let driveFolderId: string;
   try {

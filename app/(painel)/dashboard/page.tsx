@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { auth } from "@/lib/auth";
 import { primeiroNome } from "@/lib/formatar";
+import { PLANO_CORTESIA_ID } from "@/lib/planos";
 import { statusDrive } from "@/lib/google";
 import { albums, uploads } from "@/lib/mongodb";
 import { BotaoCopiar } from "./a/[slug]/botao-copiar";
@@ -50,7 +51,7 @@ export default async function DashboardPage() {
     albums
       .find(
         { ownerId: new ObjectId(session.user.id) },
-        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1, suspenso: 1, premium: 1 } },
+        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1, suspenso: 1, planoContratado: 1, planoExpiraEm: 1 } },
       )
       .sort({ createdAt: -1 })
       .toArray(),
@@ -69,7 +70,11 @@ export default async function DashboardPage() {
   ]);
   const totalPorAlbum = new Map(contagens.map((c) => [c._id.toString(), c.total]));
   const totalArquivos = contagens.reduce((soma, c) => soma + c.total, 0);
-  const planoPremium = (session.user as { plano?: string }).plano === "premium"; // cortesia: todos os álbuns premium
+  // Nome do plano pago vigente de cada álbum (cortesia do dono vale para todos).
+  const cortesia = (session.user as { plano?: string }).plano === PLANO_CORTESIA_ID;
+  const agora = new Date();
+  const planoPago = (a: (typeof lista)[number]) =>
+    cortesia ? "Cortesia" : a.planoContratado && (!a.planoExpiraEm || a.planoExpiraEm > agora) ? a.planoContratado.nome : null;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -157,9 +162,9 @@ export default async function DashboardPage() {
                     />
                     {a.suspenso ? "Suspenso" : a.ativo ? "Recebendo" : "Pausado"}
                   </span>
-                  {(a.premium || planoPremium) && (
+                  {planoPago(a) && (
                     <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-                      ★ Premium
+                      ★ {planoPago(a)}
                     </span>
                   )}
                   {a.dataEvento && (

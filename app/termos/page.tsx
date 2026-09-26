@@ -1,12 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EMAIL_CONTATO, PaginaLegal, RESPONSAVEL } from "@/components/pagina-legal";
-import { LIMITE_ARQUIVOS_GRATIS, precoFormatado } from "@/lib/planos";
-import { MAX_ARQUIVOS_POR_ALBUM } from "@/lib/upload-limits";
+import { formatarPreco, formatarTamanho, planoGratis, planosAVenda } from "@/lib/planos";
 
 export const metadata: Metadata = { title: "Termos de Uso · Enviaí" };
 
-export default function TermosPage() {
+// Preços e limites vêm dos planos cadastrados no /admin/planos.
+export const dynamic = "force-dynamic";
+
+export default async function TermosPage() {
+  const [gratis, aVenda] = await Promise.all([planoGratis(), planosAVenda()]);
+  const menorPreco = aVenda.length ? Math.min(...aVenda.map((p) => p.precoCentavos)) : null;
+  const n = (x: number) => x.toLocaleString("pt-BR");
+
   return (
     <PaginaLegal titulo="Termos de Uso" atualizadoEm="26 de setembro de 2026">
       <p>
@@ -48,24 +54,26 @@ export default function TermosPage() {
 
       <h2>5. Limites de uso</h2>
       <p>
-        Para manter o serviço estável, há limites de tamanho por arquivo (até 4 GB), de quantidade de arquivos por
-        álbum (até {MAX_ARQUIVOS_POR_ALBUM.toLocaleString("pt-BR")}) e de envios seguidos a partir de um mesmo acesso.
-        Os limites podem mudar, e avisaremos no site.
+        Para manter o serviço estável, cada plano tem limites de tamanho por arquivo, de quantidade de arquivos por álbum
+        e, quando indicado, de prazo para receber arquivos. Também há limite de envios seguidos a partir de um mesmo
+        acesso. Os limites de cada plano aparecem no painel, na página de planos do álbum.
       </p>
 
       <h2>6. Planos, preço e reembolso</h2>
       <p>
-        O Enviaí tem um plano grátis e um plano premium, contratado por álbum (por evento), com pagamento único de{" "}
-        {precoFormatado()}. O plano grátis permite 1 álbum recebendo arquivos por vez, com até{" "}
-        {LIMITE_ARQUIVOS_GRATIS.toLocaleString("pt-BR")} arquivos. O premium do álbum libera até{" "}
-        {MAX_ARQUIVOS_POR_ALBUM.toLocaleString("pt-BR")} arquivos, o telão ao vivo e a personalização (cor e capa), e não
-        tem mensalidade nem prazo de validade.
+        O Enviaí tem um plano grátis e planos pagos contratados por álbum (por evento), com pagamento único e sem
+        mensalidade{menorPreco !== null && <>, a partir de {formatarPreco(menorPreco)}</>}. O plano grátis permite{" "}
+        {n(gratis.albunsAtivos ?? 1)} {(gratis.albunsAtivos ?? 1) === 1 ? "álbum recebendo" : "álbuns recebendo"} arquivos
+        por vez, com até {n(gratis.limiteArquivos)} arquivos de até {formatarTamanho(gratis.maxBytesArquivo)} cada
+        {gratis.validadeDias ? <>, durante {gratis.validadeDias} dias após a criação do álbum</> : ""}. Os planos pagos
+        aumentam esses limites e podem incluir telão ao vivo e personalização (cor e capa); os detalhes de cada plano
+        aparecem antes da compra. Quando um plano tem prazo, depois dele o álbum volta às regras do plano grátis.
       </p>
       <p>
-        O pagamento é processado pelo Mercado Pago (Pix, cartão ou boleto), e o premium é liberado automaticamente após a
+        O pagamento é processado pelo Mercado Pago (Pix, cartão ou boleto), e o plano é liberado automaticamente após a
         confirmação. Você pode desistir da compra em até 7 dias após o pagamento e receber o valor de volta, conforme o
         Código de Defesa do Consumidor: basta escrever para <a href={`mailto:${EMAIL_CONTATO}`}>{EMAIL_CONTATO}</a>. Em
-        caso de reembolso, o álbum volta ao plano grátis. Mudanças de preço valem só para novas compras.
+        caso de reembolso, o álbum volta ao plano grátis. Mudanças de preço ou de limites valem só para novas compras.
       </p>
 
       <h2>7. Disponibilidade e responsabilidade</h2>

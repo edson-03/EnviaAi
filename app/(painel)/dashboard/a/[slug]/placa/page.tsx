@@ -13,10 +13,10 @@ export default async function PlacaPage({
   searchParams: Promise<{ modelo?: string }>;
 }) {
   const [{ slug }, { modelo }] = await Promise.all([params, searchParams]);
-  const { album, premium } = await albumDoDono(slug);
+  const { album, situacao } = await albumDoDono(slug);
   const mesa = modelo === "mesa";
   const link = linkDoAlbum(slug);
-  const cor = premium ? corDoAlbum(album.corTema) : COR_PADRAO; // cor é recurso premium
+  const cor = situacao.plano.personalizacao ? corDoAlbum(album.corTema) : COR_PADRAO;
   const qr = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     await QRCode.toString(link, { type: "svg", margin: 1, color: { dark: "#18181b", light: "#ffffff" } }),
   )}`;

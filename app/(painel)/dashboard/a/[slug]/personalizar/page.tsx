@@ -5,9 +5,9 @@ import { FormPersonalizar } from "./form-personalizar";
 
 export default async function PersonalizarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { album, premium } = await albumDoDono(slug);
+  const { album, situacao } = await albumDoDono(slug);
 
-  if (!premium) {
+  if (!situacao.plano.personalizacao) {
     return (
       <ConvitePremium
         slug={slug}

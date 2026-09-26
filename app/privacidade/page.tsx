@@ -80,7 +80,7 @@ export default function PrivacidadePage() {
         <li>Vercel: hospedagem do site;</li>
         <li>Resend: envio dos e-mails de resumo para o organizador (pode ser desligado em “Sua conta”);</li>
         <li>
-          Mercado Pago: processamento dos pagamentos do premium. Os dados de pagamento (cartão, Pix, CPF) são informados
+          Mercado Pago: processamento dos pagamentos dos planos. Os dados de pagamento (cartão, Pix, CPF) são informados
           direto ao Mercado Pago; o Enviaí guarda apenas o número, o valor, a forma e a situação de cada pagamento.
         </li>
       </ul>

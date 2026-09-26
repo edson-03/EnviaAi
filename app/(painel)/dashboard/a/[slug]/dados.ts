@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { albums } from "@/lib/mongodb";
+import { situacaoDoAlbum } from "@/lib/planos";
 
 // Sessão + álbum do dono, buscados uma vez por requisição (layout e página usam os dois).
 export const albumDoDono = cache(async (slug: string) => {
@@ -11,9 +12,9 @@ export const albumDoDono = cache(async (slug: string) => {
   if (!session) redirect("/entrar");
   const album = await albums.findOne({ slug, ownerId: new ObjectId(session.user.id) });
   if (!album) notFound();
-  // Premium: pago para o álbum, ou cortesia no usuário (plano "premium", dado pelo /admin).
-  const premium = Boolean(album.premium) || (session.user as { plano?: string }).plano === "premium";
-  return { session, album, premium };
+  // Plano valendo agora: cortesia do dono, plano comprado e vigente, ou grátis.
+  const situacao = await situacaoDoAlbum(album, (session.user as { plano?: string }).plano ?? null);
+  return { session, album, situacao };
 });
 
 export function linkDoAlbum(slug: string) {

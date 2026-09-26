@@ -29,8 +29,11 @@ export type Album = {
   suspenso?: boolean; // pelo /admin; o dono não consegue reverter
   telaoToken?: string; // link secreto /telao/<token>; trocar = invalidar o anterior
   ultimoResumoEm?: Date; // último e-mail de resumo enviado ao dono (máx. 1 por hora)
-  premium?: boolean; // liberado por pagamento (por evento); ver lib/planos.ts
-  premiumDesde?: Date;
+  // Plano pago comprado para este álbum (cópia do plano na hora da compra). Ver lib/planos.ts.
+  planoContratado?: PlanoContratado;
+  planoDesde?: Date;
+  planoExpiraEm?: Date; // fim do período em que recebe arquivos; ausente = sem prazo
+  planoPagamentoId?: string; // mpPaymentId que liberou o plano (para estorno)
   createdAt: Date;
 };
 
@@ -54,11 +57,35 @@ export type RateLimit = {
   expiresAt: Date;
 };
 
-// Pagamento do premium de um álbum (Mercado Pago). Status copiado da API do Mercado Pago.
+// Plano configurável no /admin/planos. _id legível ("gratis", "premium", "basico"...).
+export type Plano = {
+  _id: string;
+  nome: string;
+  tipo: "gratis" | "pago"; // só existe um "gratis"
+  precoCentavos: number;
+  limiteArquivos: number;
+  maxBytesArquivo: number;
+  telao: boolean;
+  personalizacao: boolean; // cor e capa
+  validadeDias: number | null; // dias recebendo arquivos (pago: desde a compra; grátis: desde a criação); null = sem prazo
+  albunsAtivos?: number; // só no grátis: álbuns recebendo ao mesmo tempo
+  ativo: boolean; // à venda
+  ordem: number;
+  createdAt: Date;
+  atualizadoEm: Date;
+};
+
+export type PlanoContratado = Pick<
+  Plano,
+  "_id" | "nome" | "precoCentavos" | "limiteArquivos" | "maxBytesArquivo" | "telao" | "personalizacao" | "validadeDias"
+>;
+
+// Pagamento de um plano de um álbum (Mercado Pago). Status copiado da API do Mercado Pago.
 export type Pagamento = {
   _id: ObjectId;
   albumId: ObjectId;
   ownerId: ObjectId;
+  planoId?: string;
   mpPaymentId: string;
   status: string; // approved, pending, rejected, refunded...
   valorCentavos: number;
@@ -71,3 +98,4 @@ export const albums: Collection<Album> = db.collection<Album>("albums");
 export const uploads: Collection<Upload> = db.collection<Upload>("uploads");
 export const rateLimits: Collection<RateLimit> = db.collection<RateLimit>("rateLimits");
 export const pagamentos: Collection<Pagamento> = db.collection<Pagamento>("pagamentos");
+export const planos: Collection<Plano> = db.collection<Plano>("planos");

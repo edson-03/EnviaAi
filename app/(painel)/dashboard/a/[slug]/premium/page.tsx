@@ -1,26 +1,35 @@
-import { processarPagamento } from "@/lib/mercadopago";
-import { albums, pagamentos } from "@/lib/mongodb";
-import { LIMITE_ARQUIVOS_GRATIS, precoFormatado } from "@/lib/planos";
-import { MAX_ARQUIVOS_POR_ALBUM } from "@/lib/upload-limits";
+import { modoMercadoPago, processarPagamento } from "@/lib/mercadopago";
+import { albums, type PlanoContratado } from "@/lib/mongodb";
+import { formatarPreco, formatarTamanho, planoGratis, planosAVenda, situacaoDoAlbum } from "@/lib/planos";
 import { iniciarPagamento } from "../actions";
 import { albumDoDono } from "../dados";
 
 const n = (x: number) => x.toLocaleString("pt-BR");
 
-const RECURSOS: { nome: string; gratis: string | boolean; premium: string | boolean }[] = [
-  { nome: "Arquivos por álbum", gratis: n(LIMITE_ARQUIVOS_GRATIS), premium: n(MAX_ARQUIVOS_POR_ALBUM) },
-  { nome: "Telão ao vivo", gratis: false, premium: true },
-  { nome: "Cor do evento e foto de capa", gratis: false, premium: true },
-  { nome: "Não conta no limite de 1 álbum ativo", gratis: false, premium: true },
-  { nome: "Placa para imprimir, recados, estatísticas, resumo por e-mail", gratis: true, premium: true },
-];
-
-function Valor({ v }: { v: string | boolean }) {
-  if (typeof v === "string") return <span className="font-medium">{v}</span>;
-  return v ? <span className="font-bold text-green-600">✓</span> : <span className="text-zinc-400">—</span>;
+// Lista de recursos de um plano, no mesmo formato para grátis, pago e contratado.
+function Recursos({ p, albunsAtivos }: { p: PlanoContratado; albunsAtivos?: number }) {
+  const itens: [boolean, string][] = [
+    [true, `Até ${n(p.limiteArquivos)} arquivos`],
+    [true, `Arquivos de até ${formatarTamanho(p.maxBytesArquivo)}`],
+    [p.telao, "Telão ao vivo"],
+    [p.personalizacao, "Cor do evento e foto de capa"],
+    [true, p.validadeDias ? `Recebe arquivos por ${p.validadeDias} dias` : "Recebe arquivos sem prazo"],
+    [true, "Placa, recados, estatísticas e resumo por e-mail"],
+  ];
+  if (albunsAtivos) itens.push([true, `${albunsAtivos} ${albunsAtivos === 1 ? "álbum recebendo" : "álbuns recebendo"} por vez`]);
+  return (
+    <ul className="space-y-2 text-sm">
+      {itens.map(([ok, texto]) => (
+        <li key={texto} className={`flex gap-2 ${ok ? "" : "text-zinc-400 line-through"}`}>
+          <span className={ok ? "font-bold text-green-600" : ""}>{ok ? "✓" : "—"}</span>
+          {texto}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
-export default async function PremiumPage({
+export default async function PlanosDoAlbumPage({
   params,
   searchParams,
 }: {
@@ -28,102 +37,92 @@ export default async function PremiumPage({
   searchParams: Promise<{ retorno?: string; payment_id?: string }>;
 }) {
   const [{ slug }, { retorno, payment_id }] = await Promise.all([params, searchParams]);
-  const { album: albumInicial, premium: premiumInicial } = await albumDoDono(slug);
+  const { session, album: albumInicial, situacao: situacaoInicial } = await albumDoDono(slug);
 
   // Voltou do Mercado Pago: confere o pagamento na hora (o aviso por webhook pode demorar alguns segundos).
-  if (payment_id) await processarPagamento(payment_id).catch((e) => console.error("Falha ao conferir pagamento", e));
-  const album = payment_id ? ((await albums.findOne({ _id: albumInicial._id })) ?? albumInicial) : albumInicial;
-  const premium = premiumInicial || Boolean(album.premium);
-  const pago = album.premium
-    ? await pagamentos.findOne({ albumId: album._id, status: "approved" }, { sort: { createdAt: -1 } })
-    : null;
-  const pagamentoConfigurado = Boolean(process.env.MP_ACCESS_TOKEN);
+  let situacao = situacaoInicial;
+  if (payment_id && modoMercadoPago() !== "nao-configurado") {
+    await processarPagamento(payment_id).catch((e) => console.error("Falha ao conferir pagamento", e));
+    const atualizado = await albums.findOne({ _id: albumInicial._id });
+    if (atualizado) situacao = await situacaoDoAlbum(atualizado, (session.user as { plano?: string }).plano ?? null);
+  }
+
+  const [aVenda, gratis] = await Promise.all([planosAVenda(), planoGratis()]);
+  const pagamentoConfigurado = modoMercadoPago() !== "nao-configurado";
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      {retorno === "pendente" && !premium && (
+    <div className="flex flex-col gap-6">
+      {retorno === "pendente" && !situacao.pago && (
         <p className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <strong>Pagamento em processamento.</strong> Assim que o Mercado Pago confirmar (Pix costuma ser na hora; boleto leva
-          até 3 dias úteis), o premium é liberado automaticamente.
+          até 3 dias úteis), o plano é liberado automaticamente.
         </p>
       )}
-      {retorno === "falha" && !premium && (
+      {retorno === "falha" && !situacao.pago && (
         <p className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
           <strong>O pagamento não foi concluído.</strong> Nenhum valor foi cobrado. Você pode tentar de novo abaixo.
         </p>
       )}
 
-      {premium ? (
+      {situacao.pago ? (
         <section className="cartao overflow-hidden">
           <div className="bg-gradient-to-br from-violet-600 to-fuchsia-500 p-6 text-white">
-            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">Premium ativo</p>
-            <h2 className="mt-1 text-2xl font-bold">Tudo liberado para “{album.titulo}”</h2>
-            {pago && (
+            <p className="text-sm font-semibold uppercase tracking-wide text-white/80">
+              {situacao.cortesia ? "Cortesia ativa" : "Plano ativo"}
+            </p>
+            <h2 className="mt-1 text-2xl font-bold">{situacao.plano.nome}</h2>
+            {situacao.prazoFinal && (
               <p className="mt-2 text-sm text-white/80">
-                Pago em {pago.createdAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.
+                Recebe arquivos até {situacao.prazoFinal.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.
               </p>
             )}
           </div>
-          <ul className="grid gap-2 p-6 text-sm sm:grid-cols-2">
-            {RECURSOS.map((r) => (
-              <li key={r.nome} className="flex items-center gap-2">
-                <span className="font-bold text-green-600">✓</span>
-                {r.nome}
-                {typeof r.premium === "string" && <span className="text-zinc-500">({r.premium})</span>}
-              </li>
-            ))}
-          </ul>
+          <div className="p-6">
+            <Recursos p={situacao.plano} />
+          </div>
         </section>
       ) : (
         <>
-          <section className="cartao overflow-hidden">
-            <div className="bg-gradient-to-br from-violet-600 to-fuchsia-500 p-6 text-white">
-              <p className="text-sm font-semibold uppercase tracking-wide text-white/80">Premium para este evento</p>
-              <p className="mt-2 text-4xl font-bold">
-                {precoFormatado()} <span className="text-base font-medium text-white/80">pagamento único</span>
-              </p>
-              <p className="mt-1 text-sm text-white/80">Vale para o álbum “{album.titulo}”, sem mensalidade.</p>
-            </div>
-            <div className="p-6">
-              {pagamentoConfigurado ? (
-                <form action={iniciarPagamento.bind(null, slug)}>
-                  <button className="btn-primario w-full py-3 text-base">Pagar com Mercado Pago</button>
-                </form>
-              ) : (
-                <p className="rounded-lg bg-zinc-100 p-3 text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                  O pagamento online ainda está sendo configurado. Volte em breve.
-                </p>
-              )}
-              <p className="mt-3 text-center text-xs text-zinc-500">
-                Pix, cartão de crédito ou boleto, na página segura do Mercado Pago. Liberação automática após a confirmação.
-              </p>
-            </div>
-          </section>
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">
+              {situacao.planoVencido ? "Renove o plano deste álbum" : "Escolha um plano para este álbum"}
+            </h2>
+            <p className="mt-1 text-sm text-zinc-500">Pagamento único por evento, sem mensalidade.</p>
+          </div>
 
-          <section className="cartao overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b border-zinc-100 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
-                <tr>
-                  <th className="px-5 py-3 text-left font-medium">Recurso</th>
-                  <th className="px-5 py-3 font-medium">Grátis</th>
-                  <th className="px-5 py-3 font-medium text-violet-600">Premium</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-                {RECURSOS.map((r) => (
-                  <tr key={r.nome}>
-                    <td className="px-5 py-3">{r.nome}</td>
-                    <td className="px-5 py-3 text-center">
-                      <Valor v={r.gratis} />
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <Valor v={r.premium} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <section className="cartao flex flex-col p-6">
+              <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Atual</p>
+              <h3 className="mt-1 text-lg font-bold">{gratis.nome}</h3>
+              <p className="mt-1 text-3xl font-bold">R$ 0</p>
+              <div className="mt-5 flex-1">
+                <Recursos p={situacao.plano} albunsAtivos={gratis.albunsAtivos} />
+              </div>
+            </section>
+
+            {aVenda.map((p) => (
+              <section key={p._id} className="cartao flex flex-col border-violet-300 p-6 dark:border-violet-800">
+                <p className="text-sm font-semibold uppercase tracking-wide text-violet-600">Por evento</p>
+                <h3 className="mt-1 text-lg font-bold">{p.nome}</h3>
+                <p className="mt-1 text-3xl font-bold">{formatarPreco(p.precoCentavos)}</p>
+                <div className="mt-5 flex-1">
+                  <Recursos p={p} />
+                </div>
+                {pagamentoConfigurado ? (
+                  <form action={iniciarPagamento.bind(null, slug, p._id)} className="mt-6">
+                    <button className="btn-primario w-full py-3">Contratar {p.nome}</button>
+                  </form>
+                ) : (
+                  <p className="mt-6 rounded-lg bg-zinc-100 p-3 text-center text-sm text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    Pagamento online em configuração.
+                  </p>
+                )}
+              </section>
+            ))}
+          </div>
+          <p className="text-center text-xs text-zinc-500">
+            Pix, cartão de crédito ou boleto, na página segura do Mercado Pago. Liberação automática após a confirmação.
+          </p>
         </>
       )}
 

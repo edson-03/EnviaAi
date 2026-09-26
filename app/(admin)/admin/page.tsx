@@ -55,7 +55,7 @@ export default async function AdminVisaoGeral() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Numero rotulo="Usuários" valor={n(totalUsuarios)} detalhe={`+${n(novosUsuarios)} nos últimos 7 dias`} />
-        <Numero rotulo="Premium" valor={n(premium)} detalhe={suspensos ? `${n(suspensos)} conta(s) suspensa(s)` : "nenhuma conta suspensa"} />
+        <Numero rotulo="Cortesias" valor={n(premium)} detalhe={suspensos ? `${n(suspensos)} conta(s) suspensa(s)` : "nenhuma conta suspensa"} />
         <Numero rotulo="Álbuns" valor={n(totalAlbuns)} detalhe={`${n(albunsAtivos)} recebendo arquivos`} />
         <Numero
           rotulo="Arquivos recebidos"

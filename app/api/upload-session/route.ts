@@ -2,7 +2,7 @@
 // O navegador do convidado envia o arquivo direto ao Drive com a URL devolvida.
 import { albums, db, uploads } from "@/lib/mongodb";
 import { DriveDesconectado, obterAccessToken } from "@/lib/google";
-import { limiteDeArquivos } from "@/lib/planos";
+import { formatarTamanho, situacaoDoAlbum } from "@/lib/planos";
 import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
 import { JANELA_LIMITE_MS, LIMITE_REQUISICOES_IP, MAX_FILE_BYTES, tipoPermitido } from "@/lib/upload-limits";
 
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
   const album = await albums.findOne(
     { slug },
-    { projection: { ownerId: 1, driveFolderId: 1, ativo: 1, suspenso: 1, premium: 1 } },
+    { projection: { ownerId: 1, driveFolderId: 1, ativo: 1, suspenso: 1, createdAt: 1, planoContratado: 1, planoExpiraEm: 1 } },
   );
   if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
   const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { suspenso: 1, plano: 1 } });
@@ -42,8 +42,16 @@ export async function POST(req: Request) {
   if (!album.ativo) {
     return Response.json({ erro: "Este álbum não está recebendo arquivos no momento" }, { status: 403 });
   }
-  const limite = limiteDeArquivos(Boolean(album.premium) || dono?.plano === "premium");
-  if ((await uploads.countDocuments({ albumId: album._id })) >= limite) {
+
+  // Regras do plano do álbum: prazo, tamanho por arquivo e quantidade.
+  const { plano, prazoEncerrado } = await situacaoDoAlbum(album, (dono?.plano as string | undefined) ?? null);
+  if (prazoEncerrado) {
+    return Response.json({ erro: "O prazo deste álbum para receber arquivos terminou" }, { status: 403 });
+  }
+  if (size > plano.maxBytesArquivo) {
+    return Response.json({ erro: `Arquivo muito grande (máx. ${formatarTamanho(plano.maxBytesArquivo)})` }, { status: 400 });
+  }
+  if ((await uploads.countDocuments({ albumId: album._id })) >= plano.limiteArquivos) {
     return Response.json({ erro: "Este álbum atingiu o limite de arquivos" }, { status: 403 });
   }
 

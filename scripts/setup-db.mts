@@ -23,8 +23,13 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
         suspenso: { bsonType: "bool" },
         telaoToken: { bsonType: "string", minLength: 20 },
         ultimoResumoEm: { bsonType: "date" },
-        premium: { bsonType: "bool" },
-        premiumDesde: { bsonType: "date" },
+        planoContratado: {
+          bsonType: "object",
+          required: ["_id", "nome", "precoCentavos", "limiteArquivos", "maxBytesArquivo", "telao", "personalizacao"],
+        },
+        planoDesde: { bsonType: "date" },
+        planoExpiraEm: { bsonType: "date" },
+        planoPagamentoId: { bsonType: "string" },
         createdAt: { bsonType: "date" },
       },
     },
@@ -62,6 +67,7 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
       properties: {
         albumId: { bsonType: "objectId" },
         ownerId: { bsonType: "objectId" },
+        planoId: { bsonType: "string" },
         mpPaymentId: { bsonType: "string" },
         status: { bsonType: "string" },
         valorCentavos: { bsonType: ["int", "long", "double"], minimum: 0 },
@@ -74,6 +80,32 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
       [{ mpPaymentId: 1 }, { unique: true }],
       [{ ownerId: 1, createdAt: -1 }],
     ],
+  },
+  planos: {
+    schema: {
+      bsonType: "object",
+      required: [
+        "_id", "nome", "tipo", "precoCentavos", "limiteArquivos", "maxBytesArquivo", "telao", "personalizacao",
+        "validadeDias", "ativo", "ordem", "createdAt", "atualizadoEm",
+      ],
+      properties: {
+        _id: { bsonType: "string", pattern: "^[a-z0-9-]{2,40}$" },
+        nome: { bsonType: "string", minLength: 1, maxLength: 60 },
+        tipo: { enum: ["gratis", "pago"] },
+        precoCentavos: { bsonType: ["int", "long", "double"], minimum: 0 },
+        limiteArquivos: { bsonType: ["int", "long", "double"], minimum: 1 },
+        maxBytesArquivo: { bsonType: ["int", "long", "double"], minimum: 1 },
+        telao: { bsonType: "bool" },
+        personalizacao: { bsonType: "bool" },
+        validadeDias: { bsonType: ["int", "long", "double", "null"] },
+        albunsAtivos: { bsonType: ["int", "long", "double"], minimum: 1 },
+        ativo: { bsonType: "bool" },
+        ordem: { bsonType: ["int", "long", "double"] },
+        createdAt: { bsonType: "date" },
+        atualizadoEm: { bsonType: "date" },
+      },
+    },
+    indices: [[{ ordem: 1 }]],
   },
   rateLimits: {
     schema: {
@@ -104,6 +136,40 @@ async function setupDb(db: Db) {
     }
     console.log(`ok: ${nome}`);
   }
+  await dadosIniciais(db);
+}
+
+// Planos iniciais (se ainda não existirem) e migração do antigo "premium: true" para planoContratado.
+async function dadosIniciais(db: Db) {
+  const GB = 1024 ** 3;
+  const agora = new Date();
+  const premium = {
+    _id: "premium", nome: "Premium", tipo: "pago", precoCentavos: 2990, limiteArquivos: 5000, maxBytesArquivo: 4 * GB,
+    telao: true, personalizacao: true, validadeDias: null, ativo: true, ordem: 1,
+  };
+  const iniciais = [
+    {
+      _id: "gratis", nome: "Grátis", tipo: "gratis", precoCentavos: 0, limiteArquivos: 200, maxBytesArquivo: 4 * GB,
+      telao: false, personalizacao: false, validadeDias: null, albunsAtivos: 1, ativo: true, ordem: 0,
+    },
+    premium,
+  ];
+  for (const p of iniciais) {
+    await db.collection("planos").updateOne({ _id: p._id as never }, { $setOnInsert: { ...p, createdAt: agora, atualizadoEm: agora } }, { upsert: true });
+  }
+  console.log("ok: planos iniciais");
+
+  const { _id, nome, precoCentavos, limiteArquivos, maxBytesArquivo, telao, personalizacao, validadeDias } = premium;
+  const migrados = await db.collection("albums").updateMany({ premium: true, planoContratado: { $exists: false } }, [
+    {
+      $set: {
+        planoContratado: { _id, nome, precoCentavos, limiteArquivos, maxBytesArquivo, telao, personalizacao, validadeDias },
+        planoDesde: { $ifNull: ["$premiumDesde", agora] },
+      },
+    },
+    { $unset: ["premium", "premiumDesde"] },
+  ]);
+  console.log(`ok: ${migrados.modifiedCount} álbum(ns) premium migrado(s)`);
 }
 
 const uri = process.env.MONGODB_URI;

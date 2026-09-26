@@ -7,6 +7,8 @@ const ITENS = [
   { href: "/admin", rotulo: "Visão geral" },
   { href: "/admin/usuarios", rotulo: "Usuários" },
   { href: "/admin/albuns", rotulo: "Álbuns" },
+  { href: "/admin/planos", rotulo: "Planos" },
+  { href: "/admin/pagamentos", rotulo: "Pagamentos" },
 ];
 
 export function NavAdmin() {

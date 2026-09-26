@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { COR_PADRAO, corDoAlbum } from "@/lib/cores";
 import { albums, db } from "@/lib/mongodb";
+import { situacaoDoAlbum } from "@/lib/planos";
 import { EnvioConvidado } from "./envio-convidado";
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -10,16 +11,19 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     { slug },
     {
       projection: {
-        titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1, suspenso: 1, corTema: 1, capaDriveFileId: 1, premium: 1,
+        titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1, suspenso: 1, corTema: 1, capaDriveFileId: 1,
+        createdAt: 1, planoContratado: 1, planoExpiraEm: 1,
       },
     },
   );
   if (!album) notFound();
 
   const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { name: 1, suspenso: 1, plano: 1 } });
-  // Cor e capa são recursos premium.
-  const premium = Boolean(album.premium) || dono?.plano === "premium";
-  const cor = premium ? corDoAlbum(album.corTema) : COR_PADRAO;
+  // Cor e capa só nos planos com personalização; prazo do plano limita o recebimento.
+  const { plano, prazoEncerrado } = await situacaoDoAlbum(album, (dono?.plano as string | undefined) ?? null);
+  const personalizado = plano.personalizacao;
+  const cor = personalizado ? corDoAlbum(album.corTema) : COR_PADRAO;
+  const recebendo = album.ativo && !prazoEncerrado;
 
   // Suspenso pelo /admin (álbum ou dono): não mostra nada do evento.
   if (album.suspenso || dono?.suspenso) {
@@ -37,7 +41,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       className="flex-1 bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--cor)_18%,transparent),transparent_420px)]"
       style={{ ["--cor" as string]: cor }}
     >
-      {premium && album.capaDriveFileId && (
+      {personalizado && album.capaDriveFileId && (
         // eslint-disable-next-line @next/next/no-img-element -- capa servida pela nossa rota a partir do Drive
         <img
           src={`/api/capa/${slug}?v=${album.capaDriveFileId}`}
@@ -58,7 +62,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
           </p>
         </div>
 
-        {album.ativo ? (
+        {recebendo ? (
           <EnvioConvidado slug={slug} />
         ) : (
           <div className="cartao mt-8 p-6 text-center">

@@ -74,7 +74,7 @@ export default async function AdminUsuarios({ searchParams }: { searchParams: Pr
                         {plano}
                       </span>
                       <button className="text-xs font-medium text-violet-600 hover:underline">
-                        {plano === "premium" ? "Voltar p/ free" : "Dar premium"}
+                        {plano === "premium" ? "Tirar cortesia" : "Dar cortesia"}
                       </button>
                     </form>
                   </td>

@@ -1,5 +1,6 @@
 // Limites compartilhados entre cliente e servidor.
-export const MAX_FILE_BYTES = 4 * 1024 * 1024 * 1024; // 4 GB
+// Teto de segurança; o limite real de cada álbum vem do plano (maxBytesArquivo, em /admin/planos).
+export const MAX_FILE_BYTES = 20 * 1024 * 1024 * 1024; // 20 GB
 export const MAX_ARQUIVOS_POR_ALBUM = 5000;
 
 // Por IP e por rota. Alto porque convidados de um evento costumam sair pelo mesmo IP.
