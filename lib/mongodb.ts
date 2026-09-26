@@ -29,6 +29,8 @@ export type Album = {
   suspenso?: boolean; // pelo /admin; o dono não consegue reverter
   telaoToken?: string; // link secreto /telao/<token>; trocar = invalidar o anterior
   ultimoResumoEm?: Date; // último e-mail de resumo enviado ao dono (máx. 1 por hora)
+  premium?: boolean; // liberado por pagamento (por evento); ver lib/planos.ts
+  premiumDesde?: Date;
   createdAt: Date;
 };
 
@@ -52,6 +54,20 @@ export type RateLimit = {
   expiresAt: Date;
 };
 
+// Pagamento do premium de um álbum (Mercado Pago). Status copiado da API do Mercado Pago.
+export type Pagamento = {
+  _id: ObjectId;
+  albumId: ObjectId;
+  ownerId: ObjectId;
+  mpPaymentId: string;
+  status: string; // approved, pending, rejected, refunded...
+  valorCentavos: number;
+  metodo?: string; // pix, credit_card...
+  createdAt: Date;
+  atualizadoEm: Date;
+};
+
 export const albums: Collection<Album> = db.collection<Album>("albums");
 export const uploads: Collection<Upload> = db.collection<Upload>("uploads");
 export const rateLimits: Collection<RateLimit> = db.collection<RateLimit>("rateLimits");
+export const pagamentos: Collection<Pagamento> = db.collection<Pagamento>("pagamentos");

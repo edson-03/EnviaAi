@@ -1,6 +1,6 @@
 import Link from "next/link";
 import QRCode from "qrcode";
-import { corDoAlbum } from "@/lib/cores";
+import { COR_PADRAO, corDoAlbum } from "@/lib/cores";
 import { albumDoDono, linkDoAlbum } from "../dados";
 import { BotaoImprimir } from "./botao-imprimir";
 import { Placa } from "./placa";
@@ -13,10 +13,10 @@ export default async function PlacaPage({
   searchParams: Promise<{ modelo?: string }>;
 }) {
   const [{ slug }, { modelo }] = await Promise.all([params, searchParams]);
-  const { album } = await albumDoDono(slug);
+  const { album, premium } = await albumDoDono(slug);
   const mesa = modelo === "mesa";
   const link = linkDoAlbum(slug);
-  const cor = corDoAlbum(album.corTema);
+  const cor = premium ? corDoAlbum(album.corTema) : COR_PADRAO; // cor é recurso premium
   const qr = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
     await QRCode.toString(link, { type: "svg", margin: 1, color: { dark: "#18181b", light: "#ffffff" } }),
   )}`;

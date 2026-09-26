@@ -23,6 +23,8 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
         suspenso: { bsonType: "bool" },
         telaoToken: { bsonType: "string", minLength: 20 },
         ultimoResumoEm: { bsonType: "date" },
+        premium: { bsonType: "bool" },
+        premiumDesde: { bsonType: "date" },
         createdAt: { bsonType: "date" },
       },
     },
@@ -51,6 +53,26 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
     indices: [
       [{ driveFileId: 1 }, { unique: true }],
       [{ albumId: 1, createdAt: -1 }],
+    ],
+  },
+  pagamentos: {
+    schema: {
+      bsonType: "object",
+      required: ["albumId", "ownerId", "mpPaymentId", "status", "valorCentavos", "createdAt", "atualizadoEm"],
+      properties: {
+        albumId: { bsonType: "objectId" },
+        ownerId: { bsonType: "objectId" },
+        mpPaymentId: { bsonType: "string" },
+        status: { bsonType: "string" },
+        valorCentavos: { bsonType: ["int", "long", "double"], minimum: 0 },
+        metodo: { bsonType: "string" },
+        createdAt: { bsonType: "date" },
+        atualizadoEm: { bsonType: "date" },
+      },
+    },
+    indices: [
+      [{ mpPaymentId: 1 }, { unique: true }],
+      [{ ownerId: 1, createdAt: -1 }],
     ],
   },
   rateLimits: {

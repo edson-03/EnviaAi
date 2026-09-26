@@ -8,7 +8,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { CORES_TEMA } from "@/lib/cores";
 import { apagarArquivo, DriveDesconectado, enviarArquivoPequeno, renomearPasta } from "@/lib/google";
+import { criarCheckout } from "@/lib/mercadopago";
 import { albums, uploads } from "@/lib/mongodb";
+import { albumEhPremium, MENSAGEM_LIMITE_ATIVOS, podeTerMaisUmAlbumAtivo } from "@/lib/planos";
 import { lerCamposAlbum } from "../../novo/campos-album";
 import type { EstadoForm } from "../../novo/actions";
 
@@ -18,15 +20,37 @@ async function donoId() {
   return new ObjectId(session.user.id);
 }
 
-export async function definirAtivo(slug: string, ativo: boolean) {
-  await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { ativo } });
-  revalidatePath(`/dashboard/a/${slug}`, "layout");
+// Álbum do dono logado + se é premium. Redireciona se não existir.
+async function albumPremiumDoDono(slug: string) {
+  const ownerId = await donoId();
+  const album = await albums.findOne({ slug, ownerId });
+  if (!album) redirect("/dashboard");
+  return { ownerId, album, premium: await albumEhPremium(album) };
 }
 
-// Cria (ou troca) o link secreto do telão. Trocar invalida o link anterior.
+export async function definirAtivo(slug: string, ativo: boolean): Promise<EstadoForm> {
+  const { ownerId, album, premium } = await albumPremiumDoDono(slug);
+  if (ativo && !premium && !(await podeTerMaisUmAlbumAtivo(ownerId, album._id))) return { erro: MENSAGEM_LIMITE_ATIVOS };
+  await albums.updateOne({ _id: album._id }, { $set: { ativo } });
+  revalidatePath(`/dashboard/a/${slug}`, "layout");
+  return {};
+}
+
+// Vai para a página de pagamento do Mercado Pago (premium deste álbum).
+export async function iniciarPagamento(slug: string) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) redirect("/entrar");
+  const album = await albums.findOne({ slug, ownerId: new ObjectId(session.user.id) }, { projection: { slug: 1, titulo: 1, premium: 1 } });
+  if (!album || album.premium) redirect(`/dashboard/a/${slug}`);
+  redirect(await criarCheckout(album, session.user.email));
+}
+
+// Cria (ou troca) o link secreto do telão. Trocar invalida o link anterior. Recurso premium.
 export async function gerarLinkTelao(slug: string) {
+  const { album, premium } = await albumPremiumDoDono(slug);
+  if (!premium) return;
   const telaoToken = randomBytes(18).toString("base64url"); // 24 caracteres
-  await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { telaoToken } });
+  await albums.updateOne({ _id: album._id }, { $set: { telaoToken } });
   revalidatePath(`/dashboard/a/${slug}`, "layout");
 }
 
@@ -40,7 +64,9 @@ export async function definirVisivelNoTelao(slug: string, driveFileId: string, v
 
 export async function salvarCor(slug: string, cor: string) {
   if (!CORES_TEMA.some((c) => c.hex === cor)) return;
-  await albums.updateOne({ slug, ownerId: await donoId() }, { $set: { corTema: cor } });
+  const { album, premium } = await albumPremiumDoDono(slug);
+  if (!premium) return;
+  await albums.updateOne({ _id: album._id }, { $set: { corTema: cor } });
   revalidatePath(`/dashboard/a/${slug}`, "layout");
 }
 
@@ -53,8 +79,9 @@ export async function enviarCapa(slug: string, form: FormData): Promise<EstadoFo
   if (!(arquivo instanceof File) || !TIPOS_CAPA.includes(arquivo.type)) return { erro: "Escolha uma imagem JPG, PNG ou WebP." };
   if (arquivo.size > MAX_CAPA_BYTES) return { erro: "Imagem muito grande. Tente outra foto." };
 
-  const album = await albums.findOne({ slug, ownerId }, { projection: { driveFolderId: 1, capaDriveFileId: 1 } });
+  const album = await albums.findOne({ slug, ownerId }, { projection: { driveFolderId: 1, capaDriveFileId: 1, premium: 1, ownerId: 1 } });
   if (!album) redirect("/dashboard");
+  if (!(await albumEhPremium(album))) return { erro: "A foto de capa é um recurso premium." };
 
   try {
     const id = await enviarArquivoPequeno(ownerId.toString(), album.driveFolderId, "Capa do álbum (Enviaí)", arquivo);

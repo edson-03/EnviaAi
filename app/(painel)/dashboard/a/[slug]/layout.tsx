@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BotaoVoltar } from "@/components/botao-voltar";
 import { EtiquetaPausado } from "../../etiqueta-pausado";
 import { AbasAlbum } from "./abas-album";
@@ -11,7 +12,7 @@ export default async function AlbumLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { album } = await albumDoDono(slug);
+  const { album, premium } = await albumDoDono(slug);
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 print:max-w-none print:p-0">
@@ -23,16 +24,32 @@ export default async function AlbumLayout({
             <h1 className="flex flex-wrap items-center gap-3 text-3xl font-bold tracking-tight">
               <span className="truncate">{album.titulo}</span>
               {!album.ativo && <EtiquetaPausado />}
+              {premium ? (
+                <span className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-2.5 py-1 text-xs font-semibold tracking-normal text-white">
+                  Premium
+                </span>
+              ) : (
+                <span className="rounded-full bg-zinc-200 px-2.5 py-1 text-xs font-medium tracking-normal text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  Grátis
+                </span>
+              )}
             </h1>
           </div>
-          <a
-            href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secundario"
-          >
-            Pasta no Drive ↗
-          </a>
+          <div className="flex flex-wrap gap-2">
+            {!premium && (
+              <Link href={`/dashboard/a/${slug}/premium`} className="btn-primario">
+                Liberar premium
+              </Link>
+            )}
+            <a
+              href={`https://drive.google.com/drive/folders/${album.driveFolderId}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secundario"
+            >
+              Pasta no Drive ↗
+            </a>
+          </div>
         </div>
         {album.suspenso && (
           <p className="mt-4 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">

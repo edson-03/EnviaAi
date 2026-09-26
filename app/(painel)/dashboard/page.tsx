@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     albums
       .find(
         { ownerId: new ObjectId(session.user.id) },
-        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1, suspenso: 1 } },
+        { projection: { slug: 1, titulo: 1, tipoEvento: 1, dataEvento: 1, driveFolderId: 1, ativo: 1, suspenso: 1, premium: 1 } },
       )
       .sort({ createdAt: -1 })
       .toArray(),
@@ -69,6 +69,7 @@ export default async function DashboardPage() {
   ]);
   const totalPorAlbum = new Map(contagens.map((c) => [c._id.toString(), c.total]));
   const totalArquivos = contagens.reduce((soma, c) => soma + c.total, 0);
+  const planoPremium = (session.user as { plano?: string }).plano === "premium"; // cortesia: todos os álbuns premium
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -156,6 +157,11 @@ export default async function DashboardPage() {
                     />
                     {a.suspenso ? "Suspenso" : a.ativo ? "Recebendo" : "Pausado"}
                   </span>
+                  {(a.premium || planoPremium) && (
+                    <span className="absolute bottom-3 left-3 rounded-full bg-black/40 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
+                      ★ Premium
+                    </span>
+                  )}
                   {a.dataEvento && (
                     <span className="absolute right-3 top-3 flex w-12 flex-col items-center overflow-hidden rounded-lg bg-white text-center shadow">
                       <span className="w-full bg-zinc-900 py-0.5 text-[10px] font-semibold uppercase text-white">

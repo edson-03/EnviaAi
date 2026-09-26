@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EMAIL_CONTATO, PaginaLegal, RESPONSAVEL } from "@/components/pagina-legal";
+import { LIMITE_ARQUIVOS_GRATIS, precoFormatado } from "@/lib/planos";
 import { MAX_ARQUIVOS_POR_ALBUM } from "@/lib/upload-limits";
 
 export const metadata: Metadata = { title: "Termos de Uso · Enviaí" };
 
 export default function TermosPage() {
   return (
-    <PaginaLegal titulo="Termos de Uso" atualizadoEm="24 de setembro de 2026">
+    <PaginaLegal titulo="Termos de Uso" atualizadoEm="26 de setembro de 2026">
       <p>
         Estes termos valem para quem usa o Enviaí, seja como organizador de um evento, seja como convidado que envia
         fotos e vídeos. Ao usar o serviço, você concorda com eles.
@@ -52,10 +53,19 @@ export default function TermosPage() {
         Os limites podem mudar, e avisaremos no site.
       </p>
 
-      <h2>6. Preço</h2>
+      <h2>6. Planos, preço e reembolso</h2>
       <p>
-        Hoje o uso é gratuito. Se no futuro houver planos pagos ou recursos extras, os preços e condições serão
-        informados antes de qualquer cobrança. Nada será cobrado sem a sua concordância.
+        O Enviaí tem um plano grátis e um plano premium, contratado por álbum (por evento), com pagamento único de{" "}
+        {precoFormatado()}. O plano grátis permite 1 álbum recebendo arquivos por vez, com até{" "}
+        {LIMITE_ARQUIVOS_GRATIS.toLocaleString("pt-BR")} arquivos. O premium do álbum libera até{" "}
+        {MAX_ARQUIVOS_POR_ALBUM.toLocaleString("pt-BR")} arquivos, o telão ao vivo e a personalização (cor e capa), e não
+        tem mensalidade nem prazo de validade.
+      </p>
+      <p>
+        O pagamento é processado pelo Mercado Pago (Pix, cartão ou boleto), e o premium é liberado automaticamente após a
+        confirmação. Você pode desistir da compra em até 7 dias após o pagamento e receber o valor de volta, conforme o
+        Código de Defesa do Consumidor: basta escrever para <a href={`mailto:${EMAIL_CONTATO}`}>{EMAIL_CONTATO}</a>. Em
+        caso de reembolso, o álbum volta ao plano grátis. Mudanças de preço valem só para novas compras.
       </p>
 
       <h2>7. Disponibilidade e responsabilidade</h2>

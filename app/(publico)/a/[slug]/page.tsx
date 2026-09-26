@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { corDoAlbum } from "@/lib/cores";
+import { COR_PADRAO, corDoAlbum } from "@/lib/cores";
 import { albums, db } from "@/lib/mongodb";
 import { EnvioConvidado } from "./envio-convidado";
 
@@ -10,14 +10,16 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
     { slug },
     {
       projection: {
-        titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1, suspenso: 1, corTema: 1, capaDriveFileId: 1,
+        titulo: 1, tipoEvento: 1, mensagemBoasVindas: 1, ownerId: 1, ativo: 1, suspenso: 1, corTema: 1, capaDriveFileId: 1, premium: 1,
       },
     },
   );
   if (!album) notFound();
 
-  const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { name: 1, suspenso: 1 } });
-  const cor = corDoAlbum(album.corTema);
+  const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { name: 1, suspenso: 1, plano: 1 } });
+  // Cor e capa são recursos premium.
+  const premium = Boolean(album.premium) || dono?.plano === "premium";
+  const cor = premium ? corDoAlbum(album.corTema) : COR_PADRAO;
 
   // Suspenso pelo /admin (álbum ou dono): não mostra nada do evento.
   if (album.suspenso || dono?.suspenso) {
@@ -35,7 +37,7 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
       className="flex-1 bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--cor)_18%,transparent),transparent_420px)]"
       style={{ ["--cor" as string]: cor }}
     >
-      {album.capaDriveFileId && (
+      {premium && album.capaDriveFileId && (
         // eslint-disable-next-line @next/next/no-img-element -- capa servida pela nossa rota a partir do Drive
         <img
           src={`/api/capa/${slug}?v=${album.capaDriveFileId}`}

@@ -1,10 +1,21 @@
+import { ConvitePremium } from "@/components/convite-premium";
 import { corDoAlbum } from "@/lib/cores";
 import { albumDoDono } from "../dados";
 import { FormPersonalizar } from "./form-personalizar";
 
 export default async function PersonalizarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { album } = await albumDoDono(slug);
+  const { album, premium } = await albumDoDono(slug);
+
+  if (!premium) {
+    return (
+      <ConvitePremium
+        slug={slug}
+        titulo="Cor do evento e foto de capa"
+        texto="Deixe a página dos convidados com a cara da festa: escolha a cor e coloque uma foto de capa no topo."
+      />
+    );
+  }
 
   return (
     <FormPersonalizar

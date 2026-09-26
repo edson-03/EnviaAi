@@ -2,14 +2,9 @@
 // O navegador do convidado envia o arquivo direto ao Drive com a URL devolvida.
 import { albums, db, uploads } from "@/lib/mongodb";
 import { DriveDesconectado, obterAccessToken } from "@/lib/google";
+import { limiteDeArquivos } from "@/lib/planos";
 import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
-import {
-  JANELA_LIMITE_MS,
-  LIMITE_REQUISICOES_IP,
-  MAX_ARQUIVOS_POR_ALBUM,
-  MAX_FILE_BYTES,
-  tipoPermitido,
-} from "@/lib/upload-limits";
+import { JANELA_LIMITE_MS, LIMITE_REQUISICOES_IP, MAX_FILE_BYTES, tipoPermitido } from "@/lib/upload-limits";
 
 export async function POST(req: Request) {
   if (await excedeuLimite(`upload-session:${ipDaRequisicao(req)}`, LIMITE_REQUISICOES_IP, JANELA_LIMITE_MS)) {
@@ -35,16 +30,20 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Arquivo muito grande" }, { status: 400 });
   }
 
-  const album = await albums.findOne({ slug }, { projection: { ownerId: 1, driveFolderId: 1, ativo: 1, suspenso: 1 } });
+  const album = await albums.findOne(
+    { slug },
+    { projection: { ownerId: 1, driveFolderId: 1, ativo: 1, suspenso: 1, premium: 1 } },
+  );
   if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
-  const donoSuspenso = await db.collection("user").countDocuments({ _id: album.ownerId, suspenso: true }, { limit: 1 });
-  if (album.suspenso || donoSuspenso) {
+  const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { suspenso: 1, plano: 1 } });
+  if (album.suspenso || dono?.suspenso) {
     return Response.json({ erro: "Este álbum está indisponível" }, { status: 403 });
   }
   if (!album.ativo) {
     return Response.json({ erro: "Este álbum não está recebendo arquivos no momento" }, { status: 403 });
   }
-  if ((await uploads.countDocuments({ albumId: album._id })) >= MAX_ARQUIVOS_POR_ALBUM) {
+  const limite = limiteDeArquivos(Boolean(album.premium) || dono?.plano === "premium");
+  if ((await uploads.countDocuments({ albumId: album._id })) >= limite) {
     return Response.json({ erro: "Este álbum atingiu o limite de arquivos" }, { status: 403 });
   }
 

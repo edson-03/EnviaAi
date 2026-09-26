@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { definirAtivo, excluirAlbum } from "./actions";
 
 export function AcoesAlbum({ slug, ativo }: { slug: string; ativo: boolean }) {
   const [pendente, iniciar] = useTransition();
+  const [erro, setErro] = useState<string>();
 
   function excluir() {
     const ok = confirm(
@@ -28,11 +29,16 @@ export function AcoesAlbum({ slug, ativo }: { slug: string; ativo: boolean }) {
         </p>
         <button
           disabled={pendente}
-          onClick={() => iniciar(() => definirAtivo(slug, !ativo))}
+          onClick={() =>
+            iniciar(async () => {
+              setErro((await definirAtivo(slug, !ativo)).erro);
+            })
+          }
           className={`${ativo ? "btn-secundario" : "btn-primario"} mt-4 w-full`}
         >
           {ativo ? "Pausar álbum" : "Reativar álbum"}
         </button>
+        {erro && <p className="mt-3 text-sm text-red-600">{erro}</p>}
       </section>
 
       <section className="cartao border-red-200 p-5 dark:border-red-900">

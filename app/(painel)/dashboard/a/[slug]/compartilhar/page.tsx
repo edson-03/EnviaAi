@@ -1,5 +1,6 @@
 import Link from "next/link";
 import QRCode from "qrcode";
+import { ConvitePremium } from "@/components/convite-premium";
 import { BotaoCopiar } from "../botao-copiar";
 import { gerarLinkTelao } from "../actions";
 import { albumDoDono, linkDoAlbum } from "../dados";
@@ -14,7 +15,7 @@ const MODELOS = [
 
 export default async function CompartilharPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { album } = await albumDoDono(slug);
+  const { album, premium } = await albumDoDono(slug);
   const link = linkDoAlbum(slug);
 
   const [qrSvg, qrPng] = await Promise.all([
@@ -56,39 +57,47 @@ export default async function CompartilharPage({ params }: { params: Promise<{ s
         </div>
       </section>
 
-      <section className="cartao p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-xl">
-            <h2 className="font-semibold">Telão ao vivo</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Abra este link na TV ou no projetor do evento: as fotos aparecem em tela cheia assim que chegam, com o nome e o
-              recado de quem enviou. Para tirar uma foto do telão, use a aba Envios.
-            </p>
-          </div>
-          {!album.telaoToken && (
-            <form action={gerarLinkTelao.bind(null, slug)}>
-              <button className="btn-primario">Criar link do telão</button>
-            </form>
-          )}
-        </div>
-        {album.telaoToken && (
-          <>
-            <p className="mt-4 break-all rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs dark:bg-zinc-800">
-              {linkTelao(album.telaoToken)}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <a href={linkTelao(album.telaoToken)} target="_blank" rel="noreferrer" className="btn-primario">
-                Abrir telão ↗
-              </a>
-              <BotaoCopiar texto={linkTelao(album.telaoToken)} />
-              <BotaoTrocarTelao slug={slug} />
+      {premium ? (
+        <section className="cartao p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-xl">
+              <h2 className="font-semibold">Telão ao vivo</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Abra este link na TV ou no projetor do evento: as fotos aparecem em tela cheia assim que chegam, com o nome e o
+                recado de quem enviou. Para tirar uma foto do telão, use a aba Envios.
+              </p>
             </div>
-            <p className="mt-3 text-xs text-zinc-500">
-              Guarde este link só para você: quem tiver o link vê as fotos do telão. Se ele vazar, use “Trocar link”.
-            </p>
-          </>
-        )}
-      </section>
+            {!album.telaoToken && (
+              <form action={gerarLinkTelao.bind(null, slug)}>
+                <button className="btn-primario">Criar link do telão</button>
+              </form>
+            )}
+          </div>
+          {album.telaoToken && (
+            <>
+              <p className="mt-4 break-all rounded-lg bg-zinc-100 px-3 py-2 font-mono text-xs dark:bg-zinc-800">
+                {linkTelao(album.telaoToken)}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href={linkTelao(album.telaoToken)} target="_blank" rel="noreferrer" className="btn-primario">
+                  Abrir telão ↗
+                </a>
+                <BotaoCopiar texto={linkTelao(album.telaoToken)} />
+                <BotaoTrocarTelao slug={slug} />
+              </div>
+              <p className="mt-3 text-xs text-zinc-500">
+                Guarde este link só para você: quem tiver o link vê as fotos do telão. Se ele vazar, use “Trocar link”.
+              </p>
+            </>
+          )}
+        </section>
+      ) : (
+        <ConvitePremium
+          slug={slug}
+          titulo="Telão ao vivo"
+          texto="Mostre as fotos na TV ou no projetor do evento assim que chegam, com o nome e o recado de quem enviou."
+        />
+      )}
 
       <section className="mt-4">
         <h2 className="text-lg font-semibold">Placa para imprimir</h2>

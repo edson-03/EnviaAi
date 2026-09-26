@@ -11,7 +11,9 @@ export const albumDoDono = cache(async (slug: string) => {
   if (!session) redirect("/entrar");
   const album = await albums.findOne({ slug, ownerId: new ObjectId(session.user.id) });
   if (!album) notFound();
-  return { session, album };
+  // Premium: pago para o álbum, ou cortesia no usuário (plano "premium", dado pelo /admin).
+  const premium = Boolean(album.premium) || (session.user as { plano?: string }).plano === "premium";
+  return { session, album, premium };
 });
 
 export function linkDoAlbum(slug: string) {
