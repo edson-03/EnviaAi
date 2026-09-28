@@ -107,6 +107,25 @@ const colecoes: Record<string, { schema: Document; indices: [Document, Document?
     },
     indices: [[{ ordem: 1 }]],
   },
+  mensagens: {
+    schema: {
+      bsonType: "object",
+      required: ["albumId", "createdAt"],
+      anyOf: [{ required: ["texto"] }, { required: ["audioDriveFileId"] }],
+      properties: {
+        albumId: { bsonType: "objectId" },
+        nome: { bsonType: "string", maxLength: 80 },
+        texto: { bsonType: "string", minLength: 1, maxLength: 1000 },
+        audioDriveFileId: { bsonType: "string" },
+        duracaoSeg: { bsonType: ["int", "long", "double"], minimum: 0, maximum: 600 },
+        createdAt: { bsonType: "date" },
+      },
+    },
+    indices: [
+      [{ albumId: 1, createdAt: -1 }],
+      [{ audioDriveFileId: 1 }, { unique: true, sparse: true }],
+    ],
+  },
   rateLimits: {
     schema: {
       bsonType: "object",

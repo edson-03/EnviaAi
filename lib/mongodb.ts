@@ -94,8 +94,20 @@ export type Pagamento = {
   atualizadoEm: Date;
 };
 
+// Livro de visitas: mensagem de texto e/ou áudio (o áudio fica na pasta do álbum no Drive).
+export type Mensagem = {
+  _id: ObjectId;
+  albumId: ObjectId;
+  nome?: string;
+  texto?: string;
+  audioDriveFileId?: string;
+  duracaoSeg?: number;
+  createdAt: Date;
+};
+
 export const albums: Collection<Album> = db.collection<Album>("albums");
 export const uploads: Collection<Upload> = db.collection<Upload>("uploads");
 export const rateLimits: Collection<RateLimit> = db.collection<RateLimit>("rateLimits");
 export const pagamentos: Collection<Pagamento> = db.collection<Pagamento>("pagamentos");
 export const planos: Collection<Plano> = db.collection<Plano>("planos");
+export const mensagens: Collection<Mensagem> = db.collection<Mensagem>("mensagens");

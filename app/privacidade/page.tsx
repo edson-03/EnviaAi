@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Política de Privacidade · Enviaí"
 
 export default function PrivacidadePage() {
   return (
-    <PaginaLegal titulo="Política de Privacidade" atualizadoEm="26 de setembro de 2026">
+    <PaginaLegal titulo="Política de Privacidade" atualizadoEm="28 de setembro de 2026">
       <p>
         Esta política explica quais dados o Enviaí coleta, para que usa e quais são os seus direitos, de acordo com a
         Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).
@@ -38,11 +38,17 @@ export default function PrivacidadePage() {
       <ul>
         <li>nome, se o convidado decidir informar;</li>
         <li>dados técnicos dos arquivos enviados: nome do arquivo, tipo, tamanho e data do envio;</li>
+        <li>
+          mensagens do livro de visitas: o texto fica guardado no Enviaí; a mensagem de voz vai para a pasta do álbum no
+          Google Drive do organizador;
+        </li>
         <li>endereço IP, usado apenas para limitar abusos e apagado automaticamente em cerca de 10 minutos.</li>
       </ul>
       <p>
-        <strong>As fotos e vídeos não passam pelos nossos servidores</strong> nem ficam guardados com o Enviaí: eles vão
-        do celular do convidado direto para o Google Drive do organizador.
+        <strong>As fotos, vídeos e áudios não ficam guardados com o Enviaí</strong>: eles vão do celular do convidado
+        direto para o Google Drive do organizador. Para mostrar miniaturas no painel e no telão e tocar os áudios no
+        painel, nosso servidor lê esses arquivos do Drive na hora, sem gravá-los; as miniaturas do telão podem ficar
+        algumas horas em cache temporário na rede de entrega da Vercel.
       </p>
 
       <h2>3. Acesso ao Google Drive</h2>

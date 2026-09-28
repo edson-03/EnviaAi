@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { CORES_TEMA } from "@/lib/cores";
 import { apagarArquivo, DriveDesconectado, enviarArquivoPequeno, renomearPasta } from "@/lib/google";
 import { criarCheckout } from "@/lib/mercadopago";
-import { albums, uploads } from "@/lib/mongodb";
+import { albums, mensagens, uploads } from "@/lib/mongodb";
 import { mensagemLimiteAtivos, planosAVenda, podeTerMaisUmAlbumAtivo, situacaoDoAlbum } from "@/lib/planos";
 import { lerCamposAlbum } from "../../novo/campos-album";
 import type { EstadoForm } from "../../novo/actions";
@@ -65,6 +65,14 @@ export async function definirVisivelNoTelao(slug: string, driveFileId: string, v
   if (!album) return;
   await uploads.updateOne({ albumId: album._id, driveFileId }, { $set: { aprovado: visivel } });
   revalidatePath(`/dashboard/a/${slug}/envios`);
+}
+
+// Apaga uma mensagem do livro de visitas (o áudio, se houver, continua na pasta do Drive).
+export async function excluirMensagem(slug: string, mensagemId: string) {
+  const album = await albums.findOne({ slug, ownerId: await donoId() }, { projection: { _id: 1 } });
+  if (!album || !ObjectId.isValid(mensagemId)) return;
+  await mensagens.deleteOne({ _id: new ObjectId(mensagemId), albumId: album._id });
+  revalidatePath(`/dashboard/a/${slug}/mensagens`);
 }
 
 export async function salvarCor(slug: string, cor: string) {

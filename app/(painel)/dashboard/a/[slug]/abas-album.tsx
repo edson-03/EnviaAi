@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const ABAS = [
   { caminho: "", rotulo: "Visão geral" },
   { caminho: "/envios", rotulo: "Envios" },
+  { caminho: "/mensagens", rotulo: "Mensagens" },
   { caminho: "/compartilhar", rotulo: "Compartilhar" },
   { caminho: "/personalizar", rotulo: "Personalizar" },
   { caminho: "/configuracoes", rotulo: "Configurações" },

@@ -4,6 +4,7 @@ import { COR_PADRAO, corDoAlbum } from "@/lib/cores";
 import { albums, db } from "@/lib/mongodb";
 import { situacaoDoAlbum } from "@/lib/planos";
 import { EnvioConvidado } from "./envio-convidado";
+import { LivroDeVisitas } from "./livro-de-visitas";
 
 export default async function AlbumPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -63,7 +64,10 @@ export default async function AlbumPage({ params }: { params: Promise<{ slug: st
         </div>
 
         {recebendo ? (
-          <EnvioConvidado slug={slug} />
+          <>
+            <EnvioConvidado slug={slug} />
+            <LivroDeVisitas slug={slug} />
+          </>
         ) : (
           <div className="cartao mt-8 p-6 text-center">
             <p className="font-semibold">Este álbum não está recebendo arquivos no momento</p>

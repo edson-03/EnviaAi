@@ -1,9 +1,9 @@
 // Pública: cria sessão resumable no Drive do dono do álbum, já dentro da pasta do álbum.
 // O navegador do convidado envia o arquivo direto ao Drive com a URL devolvida.
-import { albums, db, uploads } from "@/lib/mongodb";
-import { DriveDesconectado, obterAccessToken } from "@/lib/google";
-import { formatarTamanho, situacaoDoAlbum } from "@/lib/planos";
+import { uploads } from "@/lib/mongodb";
+import { formatarTamanho } from "@/lib/planos";
 import { excedeuLimite, ipDaRequisicao } from "@/lib/rate-limit";
+import { albumQueRecebe, criarSessaoNoDrive } from "@/lib/recebimento";
 import { JANELA_LIMITE_MS, LIMITE_REQUISICOES_IP, MAX_FILE_BYTES, tipoPermitido } from "@/lib/upload-limits";
 
 export async function POST(req: Request) {
@@ -30,24 +30,11 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Arquivo muito grande" }, { status: 400 });
   }
 
-  const album = await albums.findOne(
-    { slug },
-    { projection: { ownerId: 1, driveFolderId: 1, ativo: 1, suspenso: 1, createdAt: 1, planoContratado: 1, planoExpiraEm: 1 } },
-  );
-  if (!album) return Response.json({ erro: "Álbum não encontrado" }, { status: 404 });
-  const dono = await db.collection("user").findOne({ _id: album.ownerId }, { projection: { suspenso: 1, plano: 1 } });
-  if (album.suspenso || dono?.suspenso) {
-    return Response.json({ erro: "Este álbum está indisponível" }, { status: 403 });
-  }
-  if (!album.ativo) {
-    return Response.json({ erro: "Este álbum não está recebendo arquivos no momento" }, { status: 403 });
-  }
+  const recebe = await albumQueRecebe(slug);
+  if (!recebe.ok) return recebe.resposta;
+  const { album, plano } = recebe;
 
-  // Regras do plano do álbum: prazo, tamanho por arquivo e quantidade.
-  const { plano, prazoEncerrado } = await situacaoDoAlbum(album, (dono?.plano as string | undefined) ?? null);
-  if (prazoEncerrado) {
-    return Response.json({ erro: "O prazo deste álbum para receber arquivos terminou" }, { status: 403 });
-  }
+  // Regras do plano do álbum: tamanho por arquivo e quantidade.
   if (size > plano.maxBytesArquivo) {
     return Response.json({ erro: `Arquivo muito grande (máx. ${formatarTamanho(plano.maxBytesArquivo)})` }, { status: 400 });
   }
@@ -55,49 +42,12 @@ export async function POST(req: Request) {
     return Response.json({ erro: "Este álbum atingiu o limite de arquivos" }, { status: 403 });
   }
 
-  let token: string;
-  try {
-    token = await obterAccessToken(album.ownerId.toString());
-  } catch (e) {
-    if (e instanceof DriveDesconectado) {
-      return Response.json({ erro: "O álbum não está recebendo arquivos no momento" }, { status: 503 });
-    }
-    throw e;
-  }
-
-  // O Drive libera CORS na URL da sessão para a origem informada aqui.
-  const origin = req.headers.get("origin") ?? process.env.NEXT_PUBLIC_APP_URL!;
-
-  const res = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json; charset=UTF-8",
-      "X-Upload-Content-Type": mimeType,
-      "X-Upload-Content-Length": String(size),
-      Origin: origin,
-    },
-    body: JSON.stringify({
-      name: fileName.slice(0, 200),
-      parents: [album.driveFolderId],
-      ...((nomeConvidado || recado) && {
-        description: [nomeConvidado && `Enviado por ${nomeConvidado}`, recado && `Recado: ${recado}`]
-          .filter(Boolean)
-          .join("\n"),
-      }),
-    }),
+  const sessao = await criarSessaoNoDrive(req, album, {
+    nome: fileName,
+    mimeType,
+    size,
+    descricao: [nomeConvidado && `Enviado por ${nomeConvidado}`, recado && `Recado: ${recado}`].filter(Boolean).join("\n"),
   });
-
-  const uploadUrl = res.headers.get("location");
-  if (!res.ok || !uploadUrl) {
-    const corpo = await res.text();
-    // O Drive recusa já na criação da sessão quando o arquivo não cabe no espaço livre.
-    if (res.status === 403 && corpo.includes("storageQuotaExceeded")) {
-      return Response.json({ erro: "O álbum não tem mais espaço para receber arquivos" }, { status: 507 });
-    }
-    console.error("Drive recusou a sessão", res.status, corpo);
-    return Response.json({ erro: "Não foi possível iniciar o envio" }, { status: 502 });
-  }
-
-  return Response.json({ uploadUrl });
+  if (!sessao.ok) return sessao.resposta;
+  return Response.json({ uploadUrl: sessao.uploadUrl });
 }
