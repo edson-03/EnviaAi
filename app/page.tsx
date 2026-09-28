@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { formatarPreco, formatarTamanho, planoGratis, planosAVenda } from "@/lib/planos";
 
 const PASSOS = [
   {
@@ -19,7 +20,7 @@ const PASSOS = [
 const BENEFICIOS = [
   { titulo: "Sem app e sem cadastro", texto: "O convidado abre o link no navegador e envia. Nada para instalar." },
   { titulo: "Qualidade original", texto: "Nada de foto comprimida pelo WhatsApp. O arquivo chega do jeito que saiu da câmera." },
-  { titulo: "Vídeos grandes", texto: "Arquivos de até 4 GB. Se a internet cair, o envio continua de onde parou." },
+  { titulo: "Vídeos grandes", texto: "Sem compressão e sem limite de duração. Se a internet cair, o envio continua de onde parou." },
   { titulo: "Tudo no seu Drive", texto: "As fotos ficam na sua conta Google, organizadas em uma pasta por evento." },
   { titulo: "Acesso mínimo", texto: "O Enviaí só enxerga as pastas que ele mesmo criou. O resto do seu Drive fica fechado." },
   { titulo: "Quem enviou o quê", texto: "O convidado pode deixar o nome, e você vê no painel quem mandou cada arquivo." },
@@ -39,10 +40,6 @@ const PERGUNTAS = [
   {
     p: "O Enviaí tem acesso a todo o meu Drive?",
     r: "Não. Pedimos a permissão mais restrita do Google, que só dá acesso às pastas e arquivos criados pelo Enviaí.",
-  },
-  {
-    p: "Tem limite de fotos?",
-    r: "Cada arquivo pode ter até 4 GB e cada álbum recebe até 5.000 arquivos. O espaço usado é o do seu Google Drive, e o painel mostra quanto ainda está livre.",
   },
   {
     p: "E se a internet do convidado cair no meio do envio?",
@@ -96,14 +93,42 @@ function CelularExemplo() {
   );
 }
 
-export default function Home() {
+// Planos e limites vêm do banco (editados em /admin/planos); a página é refeita a cada 5 minutos.
+export const revalidate = 300;
+
+export default async function Home() {
+  const [gratis, aVenda] = await Promise.all([planoGratis(), planosAVenda()]);
+  const n = (x: number) => x.toLocaleString("pt-BR");
+  const maiorLimite = Math.max(gratis.limiteArquivos, ...aVenda.map((p) => p.limiteArquivos));
+  const menorPreco = aVenda.length ? Math.min(...aVenda.map((p) => p.precoCentavos)) : null;
+  const perguntas = [
+    ...PERGUNTAS,
+    {
+      p: "Tem limite de fotos?",
+      r: `No plano grátis, cada álbum recebe até ${n(gratis.limiteArquivos)} arquivos de até ${formatarTamanho(gratis.maxBytesArquivo)} cada` +
+        (aVenda.length ? `; nos planos pagos, até ${n(maiorLimite)} arquivos.` : ".") +
+        " O espaço usado é o do seu Google Drive, e o painel mostra quanto ainda está livre.",
+    },
+    {
+      p: "Quanto custa?",
+      r: menorPreco !== null
+        ? `Criar álbuns é grátis. Para liberar mais arquivos, telão ao vivo e personalização, você paga uma vez por evento, a partir de ${formatarPreco(menorPreco)}, sem mensalidade. Pix, cartão ou boleto.`
+        : "Criar álbuns é grátis.",
+    },
+  ];
+
   return (
     <div className="flex flex-1 flex-col font-sans">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
         <Logo />
-        <Link href="/entrar" className="text-sm font-medium text-zinc-700 hover:text-violet-600 dark:text-zinc-300">
-          Entrar
-        </Link>
+        <nav className="flex items-center gap-5">
+          <a href="#planos" className="text-sm font-medium text-zinc-700 hover:text-violet-600 dark:text-zinc-300">
+            Planos
+          </a>
+          <Link href="/entrar" className="text-sm font-medium text-zinc-700 hover:text-violet-600 dark:text-zinc-300">
+            Entrar
+          </Link>
+        </nav>
       </header>
 
       <main className="flex-1">
@@ -174,10 +199,48 @@ export default function Home() {
           </div>
         </section>
 
+        <section id="planos" className="mx-auto w-full max-w-5xl px-4 py-16">
+          <h2 className="text-center text-3xl font-bold tracking-tight">Planos e preços</h2>
+          <p className="mt-2 text-center text-zinc-600 dark:text-zinc-400">
+            Comece grátis. Pague só quando o evento pedir mais, uma vez por evento, sem mensalidade.
+          </p>
+          <div className={`mx-auto mt-10 grid gap-6 ${aVenda.length ? "md:grid-cols-2" : ""} ${aVenda.length > 1 ? "lg:grid-cols-3" : ""} max-w-5xl`}>
+            {[gratis, ...aVenda].map((p) => (
+              <div
+                key={p._id}
+                className={`flex flex-col rounded-2xl border p-6 ${p.tipo === "pago" ? "border-violet-300 bg-violet-50/50 dark:border-violet-800 dark:bg-violet-950/20" : "bg-white dark:border-zinc-800 dark:bg-zinc-900"}`}
+              >
+                <h3 className="text-lg font-bold">{p.nome}</h3>
+                <p className="mt-2 text-3xl font-bold">
+                  {p.tipo === "pago" ? formatarPreco(p.precoCentavos) : "R$ 0"}
+                  <span className="ml-1 text-sm font-medium text-zinc-500">{p.tipo === "pago" ? "por evento" : "para sempre"}</span>
+                </p>
+                <ul className="mt-5 flex-1 space-y-2 text-sm">
+                  <li>✓ Até {n(p.limiteArquivos)} arquivos por álbum</li>
+                  <li>✓ Arquivos de até {formatarTamanho(p.maxBytesArquivo)}</li>
+                  {p.tipo === "gratis" && <li>✓ {n(p.albunsAtivos ?? 1)} álbum(ns) recebendo por vez</li>}
+                  <li className={p.telao ? "" : "text-zinc-400 line-through"}>{p.telao ? "✓" : "—"} Telão ao vivo</li>
+                  <li className={p.personalizacao ? "" : "text-zinc-400 line-through"}>
+                    {p.personalizacao ? "✓" : "—"} Cor do evento e foto de capa
+                  </li>
+                  <li>✓ {p.validadeDias ? `Recebe arquivos por ${p.validadeDias} dias` : "Recebe arquivos sem prazo"}</li>
+                  <li>✓ Placa para imprimir, recados e resumo por e-mail</li>
+                </ul>
+                <Link
+                  href="/entrar"
+                  className={`mt-6 rounded-lg px-4 py-2.5 text-center font-medium ${p.tipo === "pago" ? "bg-violet-600 text-white hover:bg-violet-700" : "border border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"}`}
+                >
+                  {p.tipo === "pago" ? "Começar e contratar no álbum" : "Começar grátis"}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="mx-auto w-full max-w-3xl px-4 py-16">
           <h2 className="text-center text-3xl font-bold tracking-tight">Perguntas frequentes</h2>
           <div className="mt-8 divide-y rounded-xl border dark:divide-zinc-800 dark:border-zinc-800">
-            {PERGUNTAS.map((q) => (
+            {perguntas.map((q) => (
               <details key={q.p} className="group p-5">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
                   {q.p}
