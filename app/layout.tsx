@@ -13,6 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Base para URLs absolutas (Open Graph, canonical).
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://enviaai.site"),
   title: "Enviaí",
   description: "Seus convidados enviam as fotos do evento direto para o seu Google Drive.",
 };
