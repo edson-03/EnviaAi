@@ -15,7 +15,7 @@ function formatoDeGravacao() {
 
 type Estado = "parado" | "gravando" | "gravado" | "enviando" | "enviado";
 
-export function LivroDeVisitas({ slug }: { slug: string }) {
+export function LivroDeVisitas({ slug, previa = false }: { slug: string; previa?: boolean }) {
   const [aba, setAba] = useState<"texto" | "audio">("texto");
   const [nome, setNome] = useState("");
   const [texto, setTexto] = useState("");
@@ -196,10 +196,10 @@ export function LivroDeVisitas({ slug }: { slug: string }) {
           <button
             type="button"
             onClick={enviar}
-            disabled={!podeEnviar || estado === "enviando"}
+            disabled={previa || !podeEnviar || estado === "enviando"}
             className="btn-primario bg-[var(--cor)] py-2.5 hover:opacity-90"
           >
-            {estado === "enviando" ? "Enviando..." : "Enviar mensagem"}
+            {previa ? "Envio desativado na prévia" : estado === "enviando" ? "Enviando..." : "Enviar mensagem"}
           </button>
         </div>
       )}

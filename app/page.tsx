@@ -23,7 +23,7 @@ import {
   IconeTelao,
 } from "@/components/landing/icones";
 import { MockupCelular, MockupDrive, MockupNotificacaoDrive, MockupPainel, MockupQr } from "@/components/landing/mockups";
-import { formatarPreco, formatarTamanho, planoGratis, planosAVenda } from "@/lib/planos";
+import { formatarPreco, formatarTamanho, planosParaVitrine } from "@/lib/planos";
 
 // Planos e limites vêm do banco (editados em /admin/planos); a página é refeita a cada 5 minutos.
 export const revalidate = 300;
@@ -123,9 +123,8 @@ function Secao({
 // ---------- Página ----------
 
 export default async function Home() {
-  const [gratis, aVenda, qr] = await Promise.all([
-    planoGratis(),
-    planosAVenda(),
+  const [{ gratis, aVenda }, qr] = await Promise.all([
+    planosParaVitrine(),
     QRCode.toDataURL(URL_SITE, { width: 300, margin: 1 }),
   ]);
   const n = (x: number) => x.toLocaleString("pt-BR");

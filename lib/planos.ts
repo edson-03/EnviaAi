@@ -35,6 +35,17 @@ export async function planosAVenda() {
   return (await listarPlanos()).filter((p) => p.tipo === "pago" && p.ativo);
 }
 
+// Para páginas públicas (landing): se o banco falhar, mostra o grátis padrão e nenhum plano pago,
+// em vez de derrubar a página (ela é refeita em 5 minutos).
+export async function planosParaVitrine() {
+  try {
+    return { gratis: await planoGratis(), aVenda: await planosAVenda() };
+  } catch (e) {
+    console.error("Não foi possível ler os planos; usando o padrão", e);
+    return { gratis: PADRAO[PLANO_GRATIS_ID] as Plano, aVenda: [] as Plano[] };
+  }
+}
+
 export function copiaDoPlano(p: Pick<Plano, keyof PlanoContratado>, precoPagoCentavos: number): PlanoContratado {
   return {
     _id: p._id, nome: p.nome, precoCentavos: precoPagoCentavos, limiteArquivos: p.limiteArquivos,

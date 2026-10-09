@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { CORES_TEMA } from "@/lib/cores";
 import { enviarCapa, removerCapa, salvarCor } from "../actions";
+import { BotaoPrevia } from "./botao-previa";
 
 const LADO_MAXIMO = 1600; // px
 
@@ -110,17 +111,31 @@ export function FormPersonalizar({
         <p className="border-b border-zinc-100 px-4 py-2 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
           Prévia
         </p>
-        <div className="bg-white p-4 text-center text-zinc-900">
-          {capaUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- capa servida pela nossa rota
-            <img src={capaUrl} alt="" className="h-32 w-full rounded-lg object-cover" />
-          ) : (
-            <div className="h-20 rounded-lg" style={{ background: `linear-gradient(135deg, ${corAtual}, ${corAtual}99)` }} />
-          )}
-          <p className="mt-3 text-lg font-bold">{titulo}</p>
-          <div className="mt-3 rounded-lg py-2 text-xs font-semibold text-white" style={{ background: corAtual }}>
-            Escolher fotos e vídeos
+        <div className="bg-white text-center text-zinc-900">
+          {/* Mesmo desenho do topo da página real: nome sobre a capa (ou sobre o degradê da cor) */}
+          <div className="relative isolate flex h-40 flex-col justify-end overflow-hidden px-4 pb-8 text-white">
+            {capaUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element -- capa servida pela nossa rota */}
+                <img src={capaUrl} alt="" className="absolute inset-0 -z-20 h-full w-full object-cover" />
+                <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/10 via-black/35 to-black/75" />
+              </>
+            ) : (
+              <div aria-hidden className="absolute inset-0 -z-10" style={{ background: `linear-gradient(135deg, ${corAtual}, color-mix(in srgb, ${corAtual} 55%, black))` }} />
+            )}
+            <p className="text-lg font-bold drop-shadow-sm">{titulo}</p>
           </div>
+          <div className="relative -mt-5 px-4 pb-4">
+            <div className="rounded-xl bg-white p-3 shadow-lg ring-1 ring-zinc-100">
+              <div className="rounded-lg py-2.5 text-xs font-semibold text-white" style={{ background: corAtual }}>
+                Escolher fotos e vídeos
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-zinc-100 p-3 dark:border-zinc-800">
+          <BotaoPrevia slug={slug} className="btn-primario w-full" />
+          <p className="mt-2 text-center text-xs text-zinc-500">Veja a página completa, como os convidados vão ver.</p>
         </div>
       </section>
     </div>

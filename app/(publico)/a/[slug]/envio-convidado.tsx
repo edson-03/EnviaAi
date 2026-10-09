@@ -13,7 +13,7 @@ type Item = {
   erro?: string;
 };
 
-export function EnvioConvidado({ slug }: { slug: string }) {
+export function EnvioConvidado({ slug, previa = false }: { slug: string; previa?: boolean }) {
   const [nomeConvidado, setNomeConvidado] = useState("");
   const [recado, setRecado] = useState("");
   const [recadoEnviado, setRecadoEnviado] = useState(false);
@@ -102,6 +102,7 @@ export function EnvioConvidado({ slug }: { slug: string }) {
   }
 
   function aoSelecionar(e: React.ChangeEvent<HTMLInputElement>) {
+    if (previa) return; // prévia do painel: nada é enviado
     const novos = Array.from(e.target.files ?? []);
     e.target.value = "";
     const base = arquivos.current.length;
@@ -130,48 +131,79 @@ export function EnvioConvidado({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="mt-8 flex flex-col gap-4">
-      <div className="cartao flex flex-col gap-5 p-5">
-        <label className="rotulo">
-          Seu nome (opcional)
-          <input
-            value={nomeConvidado}
-            onChange={(e) => setNomeConvidado(e.target.value)}
-            maxLength={80}
-            placeholder="Assim sabem quem enviou"
-            className="campo"
-          />
-        </label>
+    <div className="flex flex-col gap-4">
+      <div className="cartao overflow-hidden shadow-xl shadow-black/10">
+        {/* Ação principal primeiro: escolher os arquivos */}
+        <div className="p-4 sm:p-5">
+          <label
+            className={`group flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-[color-mix(in_srgb,var(--cor)_45%,transparent)] bg-[color-mix(in_srgb,var(--cor)_7%,transparent)] px-4 py-10 text-center transition ${
+              previa
+                ? "cursor-not-allowed opacity-70"
+                : "cursor-pointer hover:border-[var(--cor)] hover:bg-[color-mix(in_srgb,var(--cor)_12%,transparent)]"
+            }`}
+          >
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--cor)] text-white shadow-lg shadow-[color-mix(in_srgb,var(--cor)_35%,transparent)] transition motion-safe:group-hover:scale-105">
+              <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M12 16V4m0 0-4 4m4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span className="text-lg font-semibold">
+              {itens.length ? "Enviar mais fotos e vídeos" : "Escolher fotos e vídeos"}
+            </span>
+            <span className="text-sm text-zinc-500">
+              {previa ? "Na prévia, os envios ficam desativados" : "Selecione vários de uma vez, direto da galeria"}
+            </span>
+            <input
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              onChange={aoSelecionar}
+              disabled={previa}
+              className="hidden"
+            />
+          </label>
+        </div>
 
-        <label className="rotulo">
-          Deixe um recado (opcional)
-          <textarea
-            value={recado}
-            onChange={(e) => {
-              setRecado(e.target.value);
-              setRecadoEnviado(false);
-            }}
-            maxLength={500}
-            rows={2}
-            placeholder="Uma mensagem para quem organizou o evento"
-            className="campo resize-y"
-          />
-          <span className="text-xs font-normal text-zinc-500">
-            {recadoEnviado ? "✓ Recado adicionado às fotos escolhidas." : "Vai junto com as próximas fotos que você escolher."}
-          </span>
-        </label>
+        {/* Opcionais: nome e recado */}
+        <div className="flex flex-col gap-4 border-t border-zinc-100 bg-zinc-50/60 p-4 sm:p-5 dark:border-zinc-800 dark:bg-zinc-900/60">
+          <label className="rotulo">
+            Seu nome (opcional)
+            <input
+              value={nomeConvidado}
+              onChange={(e) => setNomeConvidado(e.target.value)}
+              maxLength={80}
+              placeholder="Assim sabem quem enviou"
+              className="campo"
+            />
+          </label>
 
-        <label className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-[color-mix(in_srgb,var(--cor)_40%,transparent)] bg-[color-mix(in_srgb,var(--cor)_7%,transparent)] px-4 py-8 text-center transition hover:border-[var(--cor)] hover:bg-[color-mix(in_srgb,var(--cor)_12%,transparent)]">
-          <svg viewBox="0 0 24 24" className="h-10 w-10 text-[var(--cor)]" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <path d="M12 16V4m0 0-4 4m4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
-          </svg>
-          <span className="font-semibold text-[var(--cor)]">
-            {itens.length ? "Enviar mais fotos e vídeos" : "Escolher fotos e vídeos"}
-          </span>
-          <span className="text-xs text-zinc-500">Você pode selecionar vários de uma vez</span>
-          <input type="file" multiple accept="image/*,video/*" onChange={aoSelecionar} className="hidden" />
-        </label>
+          <details className="group" open={recado.length > 0}>
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-[var(--cor)]">
+              <span className="transition-transform group-open:rotate-45" aria-hidden>
+                +
+              </span>
+              Adicionar um recado às fotos
+            </summary>
+            <label className="rotulo mt-3">
+              <span className="sr-only">Recado</span>
+              <textarea
+                value={recado}
+                onChange={(e) => {
+                  setRecado(e.target.value);
+                  setRecadoEnviado(false);
+                }}
+                maxLength={500}
+                rows={2}
+                placeholder="Uma mensagem para quem organizou o evento"
+                className="campo resize-y"
+              />
+              <span className="text-xs font-normal text-zinc-500">
+                {recadoEnviado ? "✓ Recado adicionado às fotos escolhidas." : "Vai junto com as próximas fotos que você escolher."}
+              </span>
+            </label>
+          </details>
+        </div>
       </div>
 
       {emAndamento && (
