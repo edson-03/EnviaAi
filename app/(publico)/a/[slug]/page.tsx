@@ -54,16 +54,30 @@ export default async function AlbumPage({
 
   return (
     // --cor: cor escolhida pelo organizador; os tons saem dela com color-mix.
-    <div className="flex-1" style={{ ["--cor" as string]: cor }}>
+    // No computador a página vira um cartão centralizado (como no celular), sobre um fundo desfocado da capa.
+    <div className="relative isolate flex-1 md:px-4 md:py-10" style={{ ["--cor" as string]: cor }}>
+      <div aria-hidden className="fixed inset-0 -z-10 hidden overflow-hidden md:block">
+        {capa ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- capa servida pela nossa rota a partir do Drive */}
+            <img src={capa} alt="" className="h-full w-full scale-110 object-cover blur-2xl" />
+            <div className="absolute inset-0 bg-black/55" />
+          </>
+        ) : (
+          <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,color-mix(in_srgb,var(--cor)_45%,transparent),transparent_55%),linear-gradient(160deg,color-mix(in_srgb,var(--cor)_25%,var(--background)),var(--background))]" />
+        )}
+      </div>
+
+      <div className="relative mx-auto w-full bg-background md:max-w-lg md:overflow-hidden md:rounded-3xl md:shadow-2xl md:ring-1 md:ring-white/10">
       {modoPrevia && (
-        <p className="sticky top-0 z-20 bg-amber-400 px-4 py-2 text-center text-xs font-semibold text-amber-950">
+        <p className="sticky top-0 z-20 bg-amber-400 md:rounded-t-3xl px-4 py-2 text-center text-xs font-semibold text-amber-950">
           Prévia da página dos convidados · os envios estão desativados
           {!recebendo && " · o álbum não está recebendo agora: os convidados veem um aviso de indisponível"}
         </p>
       )}
 
       {/* Topo: capa como fundo (ou degradê na cor do evento) com o nome do evento por cima */}
-      <header className={`relative isolate flex flex-col justify-end overflow-hidden ${capa ? "min-h-[360px] sm:min-h-[440px]" : "min-h-[300px]"}`}>
+      <header className={`relative isolate flex flex-col justify-end overflow-hidden ${capa ? "min-h-[360px] md:min-h-[400px]" : "min-h-[300px]"}`}>
         {capa ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element -- capa servida pela nossa rota a partir do Drive */}
@@ -84,7 +98,7 @@ export default async function AlbumPage({
               {album.tipoEvento}
             </span>
           )}
-          <h1 className="mt-3 text-4xl font-bold tracking-tight drop-shadow-sm sm:text-5xl">{album.titulo}</h1>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight drop-shadow-sm">{album.titulo}</h1>
           <p className="mx-auto mt-3 max-w-md whitespace-pre-line text-base text-white/90 drop-shadow-sm">
             {album.mensagemBoasVindas ?? "Compartilhe suas fotos e vídeos deste momento."}
           </p>
@@ -128,6 +142,7 @@ export default async function AlbumPage({
           </p>
         </footer>
       </main>
+      </div>
     </div>
   );
 }
