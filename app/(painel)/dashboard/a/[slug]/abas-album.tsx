@@ -8,6 +8,7 @@ const ABAS = [
   { caminho: "/envios", rotulo: "Envios" },
   { caminho: "/mensagens", rotulo: "Mensagens" },
   { caminho: "/compartilhar", rotulo: "Compartilhar" },
+  { caminho: "/caixinha", rotulo: "Caixinha" },
   { caminho: "/personalizar", rotulo: "Personalizar" },
   { caminho: "/configuracoes", rotulo: "Configurações" },
 ];
